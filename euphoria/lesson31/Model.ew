@@ -1,0 +1,102 @@
+include MilkshapeLoader.ew
+include Lesson31.exw
+
+integer retval 
+
+global function NeHeLoadBitmap( sequence FileName,  atom texid)                    -- Creates Texture From A Bitmap File
+atom  hBMP,                                                     -- Handle Of The Bitmap
+         BMP,                                                       -- Bitmap Structure
+         filename
+
+    filename = allocate_string(FileName)
+    BMP = allocate(24)
+    c_proc(glGenTextures, {1, texid})                           -- Create The Texture
+    hBMP= c_func(LoadImage, {c_func(GetModuleHandle, {NULL}), filename, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION + LR_LOADFROMFILE} )
+
+    if not hBMP then                                                            -- Does The Bitmap Exist?
+        return FALSE                                                    -- If Not Return False
+    end if
+
+    retval = c_func(GetObject, {hBMP, 24, BMP})           -- Get The Object
+                                                                -- hBMP:        Handle To Graphics Object
+                                                                -- sizeof(BMP): Size Of Buffer For Object Information
+                                                                -- &BMP:        Buffer For Object Information
+
+    c_proc(glPixelStorei, {GL_UNPACK_ALIGNMENT, 4}) -- Pixel Storage Mode (Word Alignment / 4 Bytes)
+
+    -- Typical Texture Generation Using Data From The Bitmap
+    c_proc(glBindTexture, {GL_TEXTURE_2D, peek4u(texid)})                           -- Bind To The Texture ID
+    c_proc(glTexParameteri, {GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR})  -- Linear Min Filter
+    c_proc(glTexParameteri, {GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR})  -- Linear Mag Filter
+    c_proc(glTexImage2D, {GL_TEXTURE_2D, 0, 3, peek4u(BMP+4), peek4u(BMP+8), 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, peek4u(BMP+20)})
+
+    retval = c_func(DeleteObject, {hBMP})                -- Delete The Object
+    
+    free(BMP+20)
+    free(BMP)
+
+    return TRUE                                                        -- Loading Was Successful
+end function
+
+integer count
+count = 0
+global procedure draw() 
+integer texEnabled, materialIndex, triangleIndex, index
+sequence Tri
+
+	texEnabled = c_func(glIsEnabled,{GL_TEXTURE_2D})
+	-- Draw by group
+	for  i = 1 to NumGroups do
+		materialIndex = ms3d_group[i][5]
+		if  materialIndex > -1 then
+			c_proc(glMaterialfv,{GL_FRONT, GL_AMBIENT, ms3d_material[materialIndex+1][2]})
+			c_proc(glMaterialfv,{GL_FRONT, GL_DIFFUSE, ms3d_material[materialIndex+1][3]})
+			c_proc(glMaterialfv,{GL_FRONT, GL_SPECULAR, ms3d_material[materialIndex+1][4]})
+			c_proc(glMaterialfv,{GL_FRONT, GL_EMISSION, ms3d_material[materialIndex+1][5]})
+			c_proc(glMaterialf,{GL_FRONT, GL_SHININESS, ms3d_material[materialIndex+1][6]})
+
+			if peek4u(ms3d_material[materialIndex+1][11]) > 0 then
+				c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(ms3d_material[materialIndex+1][11])})
+				c_proc(glEnable,{GL_TEXTURE_2D})
+			else
+				c_proc(glDisable,{GL_TEXTURE_2D})
+			end if
+		else
+			-- Material properties?
+			c_proc(glDisable,{GL_TEXTURE_2D})
+		end if
+
+		c_proc(glBegin,{GL_TRIANGLES})
+		for j = 1 to ms3d_group[i][3] do
+			triangleIndex = ms3d_group[i][4][j] + 1
+			Tri = ms3d_triangle[triangleIndex]
+			for k = 1 to 3 do
+				index = Tri[2][k] + 1
+				c_proc(glNormal3f,Tri[3][k])
+				c_proc(glTexCoord2f,{Tri[4][k],Tri[5][k]})
+				c_proc(glVertex3f,ms3d_vertex[index][2])
+			end for
+		end for
+		c_proc(glEnd,{})
+	end for
+
+	if texEnabled then
+		c_proc(glEnable,{GL_TEXTURE_2D})
+	else
+		c_proc(glDisable,{GL_TEXTURE_2D})
+	end if
+end procedure
+
+global procedure reloadTextures()
+	for i = 1 to NumMaterials do
+		if ms3d_material[i][1][1] > 0 then
+			if not NeHeLoadBitmap(ms3d_material[i][9],ms3d_material[i][11]) then
+				retval = message_box("Couldn't Open Texture File","Couldn't Open File",MB_ICONEXCLAMATION)
+			end if
+		else
+			poke4(ms3d_material[i][11],0)
+		end if
+	end for
+end procedure
+
+

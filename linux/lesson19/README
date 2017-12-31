@@ -1,0 +1,37 @@
+Linux port of NeHe's Lesson 19
+
+I made this Linux port of lesson 19 from NeHe
+at approximately 4 AM in vi (of course).  While I'm sure the code
+looked great in whatever editor it was originally done in, it looked
+pretty awful (tabs and stuff) in vi, so hopefully this will look nice
+for all you Linux folk.
+
+WHAT YOU NEED
+-------------
+
+Well, obviously you need GL.  Aside from that, all you need is the SDL libraries.
+I have 1.1.3.  You can get it at http://www.libsdl.org
+It's nice for getting fullscreen stuff kickin with OpenGL (or not, for that matter).
+I believe the OpenUT (Unreal Tournament for Linux) project makes use of it.  Oh well,
+it's nice.  You'll need it.  Don't forget to add the SDL include path to your include
+path or...well...you have to.
+
+WHAT TO DO
+----------
+
+I have included a binary which was compiled on my PIII running slackware 7.0.
+Not that it matters, it should run on any i386 with GL and SDL >= 1.1.3.
+You COULD run that, OR compile the code (duh).  Make sure that you like with
+GL, GLU, SDL, and pthread libraries (pthread is used by SDL).  Ex:
+
+gcc lesson19.cc -olesson19 -lGL -lGLU -lSDL -lpthread
+
+Hard, huh?
+
+BTW, props to NeHe...I like this particle system.  It looks hella cool.  Hope y'all enjoy
+this port to the world's most wonderful OS there ever was and will be.
+
+Peace,
+
+Ken Rockot
+kjrockot@home.com

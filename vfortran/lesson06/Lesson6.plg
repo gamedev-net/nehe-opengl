@@ -1,0 +1,24 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Lesson1 - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\TEMP\RSP7B.tmp" with contents
+[
+/check:bounds /compile_only /debug:full /nologo /traceback /warn:argument_checking /warn:nofileopt /winapp /module:"Debug/" /object:"Debug/" /pdbfile:"Debug/DF60.PDB" 
+"D:\Programation\OpenGL\F90\Lessons\Lesson6\OpenGL_aux.f90"
+]
+<h3>Output Window</h3>
+Compiling Fortran...
+D:\Programation\OpenGL\F90\Lessons\Lesson6\OpenGL_aux.f90
+
+
+
+<h3>Results</h3>
+OpenGL_aux.obj - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

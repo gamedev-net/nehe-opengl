@@ -1,0 +1,353 @@
+F C:\lcc\projects\nehe_radial\Lesson36\lesson36.c
+f c:\lcc\include\windows.h
+f c:\lcc\include\stdlib.h
+f c:\lcc\include\stddef.h
+f c:\lcc\include\_syslist.h
+f c:\lcc\include\string.h
+f c:\lcc\include\win.h
+f c:\lcc\include\limits.h
+f c:\lcc\include\stdarg.h
+f c:\lcc\include\ctype.h
+f c:\lcc\include\basetsd.h
+f c:\lcc\include\gl\gl.h
+f c:\lcc\include\gl\glu.h
+f c:\lcc\include\gl\glut.h
+f c:\lcc\include\math.h
+T GLvoid 12 39 39
+T GLfloat 12 35 35
+T GLuint 12 34 34
+T GLsizei 12 31 31
+T PIXELFORMATDESCRIPTOR 7 11840 11867
+t tagPIXELFORMATDESCRIPTOR 7 11840 11867
+@ nSize
+@ nVersion
+@ dwFlags
+@ iPixelType
+@ cColorBits
+@ cRedBits
+@ cRedShift
+@ cGreenBits
+@ cGreenShift
+@ cBlueBits
+@ cBlueShift
+@ cAlphaBits
+@ cAlphaShift
+@ cAccumBits
+@ cAccumRedBits
+@ cAccumGreenBits
+@ cAccumBlueBits
+@ cAccumAlphaBits
+@ cDepthBits
+@ cStencilBits
+@ cAuxBuffers
+@ iLayerType
+@ bReserved
+@ dwLayerMask
+@ dwVisibleMask
+@ dwDamageMask
+T WNDCLASS 7 10763 10763
+t tagWNDCLASSA 7 10733 10744
+@ style
+@ lpfnWndProc
+@ cbClsExtra
+@ cbWndExtra
+@ hInstance
+@ hIcon
+@ hCursor
+@ hbrBackground
+@ lpszMenuName
+@ lpszClassName
+T MSG 7 9515 9522
+t tagMSG 7 9515 9522
+@ hwnd
+@ message
+@ wParam
+@ lParam
+@ time
+@ pt
+T DEVMODE 7 8086 8086
+t _devicemodeA 7 7996 8036
+@ dmDeviceName
+@ dmSpecVersion
+@ dmDriverVersion
+@ dmSize
+@ dmDriverExtra
+@ dmFields
+@ dmOrientation
+@ dmPaperSize
+@ dmPaperLength
+@ dmPaperWidth
+@ dmPosition
+@ dmScale
+@ dmCopies
+@ dmDefaultSource
+@ dmPrintQuality
+@ dmColor
+@ dmDuplex
+@ dmYResolution
+@ dmTTOption
+@ dmCollate
+@ dmFormName
+@ dmLogPixels
+@ dmBitsPerPel
+@ dmPelsWidth
+@ dmPelsHeight
+@ dmDisplayFlags
+@ dmDisplayFrequency
+@ dmICMMethod
+@ dmICMIntent
+@ dmMediaType
+@ dmDitherType
+@ dmReserved1
+@ dmReserved2
+@ dmPanningWidth
+@ dmPanningHeight
+T RECT 7 7203 7208
+t _RECT 7 7208 7209
+@ left
+@ top
+@ right
+@ bottom
+T WNDPROC 7 555 555
+T WORD 7 463 463
+T LRESULT 7 423 423
+T LPSTR 7 422 422
+T HWND 7 86 86
+T DWORD 7 33 33
+M CreateGLWindow 1 433
+L PixelFormat wc dwExStyle dwStyle WindowRect dmScreenSettings pfd 
+R 1 719 1 678 
+M KillGLWindow 1 385
+R 1 728 1 521 1 551 1 558 1 565 1 572 1 579 1 591 
+R 1 716 
+M DrawGLScene 1 364
+R 1 708 
+M Deinitialize 1 355
+M Initialize 1 310
+L global_ambient light0pos light0ambient light0diffuse light0specular lmodel_ambient 
+R 1 589 
+M ReSizeGLScene 1 286
+R 1 654 1 587 
+M DrawBlur 1 235
+L spost alphainc alpha num 
+R 1 373 
+M RenderToTexture 1 218
+R 1 371 
+M ViewPerspective 1 210
+R 1 275 
+M ViewOrtho 1 199
+R 1 250 
+M ProcessHelix 1 105
+L x y z phi theta v u r twists glfMaterialColor 
+L specular 
+R 1 372 1 222 
+M calcNormal 1 79
+L v1 v2 x y z 
+R 1 182 
+M ReduceToUnit 1 65
+L length __sqrt __sqrt 
+R 1 102 
+M EmptyTexture 1 42
+L txtnumber data 
+R 1 316 
+M WndProc 1 602
+R 1 449 
+E BlurTexture 1 32 32 unsigned int 
+A 1 316 
+C 1 357 
+R 1 357 1 224 1 249 1 316 
+E normal 1 31 31 * float 
+R 1 184 1 182 1 184 
+E vertexes 1 30 30 * * float 
+A 1 145 
+R 1 190 1 145 1 146 1 147 1 156 1 157 1 158 1 167 
+R 1 168 1 169 1 178 1 179 1 180 1 182 1 187 1 188 
+R 1 189 1 190 
+E angle 1 29 29 float 
+A 1 314 
+R 1 314 1 125 1 126 
+E height 1 25 25 int 
+R 1 719 1 318 1 321 
+E width 1 25 25 int 
+R 1 719 1 318 1 321 
+E fullscreen 1 24 24 int 
+A 1 717 1 674 1 481 1 445 
+R 1 719 1 387 1 445 1 465 1 481 1 492 1 674 1 678 
+R 1 717 
+E active 1 23 23 int 
+A 1 617 1 613 
+R 1 700 1 613 1 617 
+E keys 1 22 22 * int 
+R 1 715 1 642 1 648 1 702 1 713 
+E hInstance 1 20 20 * void 
+A 1 447 1 422 
+R 1 518 1 419 1 422 1 447 1 452 
+E hWnd 1 19 19 * void 
+A 1 520 1 416 
+R 1 586 1 407 1 413 1 416 1 507 1 549 1 584 1 585 
+E hRC 1 18 18 * void 
+A 1 571 1 404 
+R 1 577 1 393 1 400 1 404 1 570 
+E hDC 1 17 17 * void 
+A 1 550 1 410 
+R 1 709 1 407 1 410 1 549 1 556 1 563 1 570 1 577 
+M isunordered 15 483
+M islessgreater 15 470
+M islessequal 15 457
+M isless 15 444
+M isgreaterequal 15 431
+M isgreater 15 418
+M sin 15 53
+R 1 176 1 142 1 143 1 153 1 154 1 164 1 165 1 175 
+M cos 15 42
+R 1 175 1 141 1 142 1 152 1 153 1 163 1 164 1 174 
+R 
+M gluPerspective 13 270
+R 1 321 1 302 
+M gluLookAt 13 257
+R 1 120 
+M glViewport 12 1486
+R 1 318 1 220 1 232 1 296 
+M glVertex3f 12 1471
+R 1 190 1 187 1 188 1 189 
+M glVertex2f 12 1463
+R 1 268 1 259 1 262 1 265 
+M glTranslatef 12 1460
+R 1 124 
+M glTexParameteri 12 1455
+R 1 56 1 55 
+M glTexImage2D 12 1452
+R 1 53 
+M glTexCoord2f 12 1418
+R 1 267 1 258 1 261 1 264 
+M glShadeModel 12 1404
+R 1 344 
+M glRotatef 12 1399
+R 1 126 1 125 
+M glPushMatrix 12 1361
+R 1 206 1 122 1 202 
+M glPopMatrix 12 1356
+R 1 215 1 195 1 213 
+M glOrtho 12 1340
+R 1 204 
+M glNormal3f 12 1333
+R 1 184 
+M glMatrixMode 12 1325
+R 1 322 1 201 1 205 1 212 1 214 1 298 1 304 1 319 
+M glMateriali 12 1323
+R 1 346 
+M glMaterialfv 12 1322
+R 1 129 1 128 
+M glLoadIdentity 12 1308
+R 1 370 1 119 1 203 1 207 1 299 1 305 1 320 1 323 
+M glLightfv 12 1302
+R 1 340 1 337 1 338 1 339 
+M glLightModelfv 12 1298
+R 1 336 1 334 
+M glGenTextures 12 1249
+R 1 51 
+M glFlush 12 1241
+R 1 374 
+M glEnd 12 1225
+R 1 273 1 193 
+M glEnable 12 1223
+R 1 342 1 245 1 248 1 277 1 325 1 341 
+M glDisable 12 1214
+R 1 279 1 242 1 243 1 246 1 278 
+M glDeleteTextures 12 1210
+R 1 357 
+M glCopyTexImage2D 12 1205
+R 1 227 
+M glColor4f 12 1188
+R 1 257 
+M glClearColor 12 1163
+R 1 368 1 229 1 347 
+M glClear 12 1161
+R 1 369 1 230 
+M glBlendFunc 12 1158
+R 1 247 
+M glBindTexture 12 1156
+R 1 280 1 52 1 224 1 249 
+M glBegin 12 1155
+R 1 254 1 133 
+M wglMakeCurrent 7 15693
+R 1 577 1 395 
+M wglDeleteContext 7 15689
+R 1 400 
+M wglCreateContext 7 15687
+R 1 570 
+M SwapBuffers 7 15697
+R 1 709 
+M ShowCursor 7 15008
+R 1 496 1 390 
+M AdjustWindowRectEx 7 15002
+R 1 504 
+M ReleaseDC 7 14976
+R 1 407 
+M GetDC 7 14973
+R 1 549 
+M SetForegroundWindow 7 14971
+R 1 585 
+M SetFocus 7 14911
+R 1 586 
+M ShowWindow 7 14851
+R 1 584 
+M DestroyWindow 7 14850
+R 1 413 
+M PostQuitMessage 7 14843
+R 1 636 
+M TranslateMessage 7 14827
+R 1 693 
+M WinMain 1 663
+L msg done 
+M SetPixelFormat 7 13403
+R 1 563 
+M ChoosePixelFormat 7 13402
+R 1 556 
+M ChangeDisplaySettingsA 7 13398
+R 1 476 1 389 
+M LoadIconA 7 13386
+R 1 453 
+M LoadCursorA 7 13384
+R 1 454 
+M MessageBoxA 7 13369
+R 1 672 1 397 1 402 1 409 1 415 1 421 1 461 1 479 
+R 1 486 1 522 1 552 1 559 1 566 1 573 1 580 1 592 
+M CreateWindowExA 7 13310
+R 1 507 
+M UnregisterClassA 7 13306
+R 1 419 
+M RegisterClassA 7 13305
+R 1 459 
+M DefWindowProcA 7 13303
+R 1 660 
+M PeekMessageA 7 13296
+R 1 685 
+M DispatchMessageA 7 13295
+R 1 694 
+M GetModuleHandleA 7 13167
+R 1 447 
+M RtlZeroMemory 7 12712
+R 1 49 
+T WPARAM 7 464 464 464 unsigned int 
+R 1 604 1 37 
+T UINT 7 458 458 458 unsigned int 
+R 1 603 1 37 
+T LPTSTR 7 288 288 288 * char 
+R 1 454 1 453 
+T LPARAM 7 111 111 111 long int 
+R 1 605 1 37 
+T HINSTANCE 7 70 70 70 * void 
+R 1 664 1 20 1 663 
+T HGLRC 7 66 66 66 * void 
+R 1 18 
+T HDC 7 56 56 56 * void 
+R 1 17 
+T BOOL 7 12 12 12 int 
+R 1 669 1 22 1 23 1 24 1 310 1 433 
+M memset 6 15
+R 1 468 
+M malloc 3 81
+R 1 48 
+M free 3 74
+R 1 58 

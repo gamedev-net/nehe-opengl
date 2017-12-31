@@ -1,0 +1,34 @@
+[Project]
+FileName=Lesson4.dev
+Name=Lesson4
+Ver=1
+IsCpp=1
+Type=0
+Compiler=-D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS
+Includes=
+Linker=-lopengl32 -lglu32 -lglaux -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32
+Libs=
+Resources=
+UnitCount=1
+ObjFiles=
+PrivateResource=
+ResourceIncludes=
+MakeIncludes=
+Icon=
+ExeOutput=
+ObjectOutput=
+OverrideOutput=0
+OverrideOutputName=
+Folders=
+CommandLine=
+Order=
+
+[Unit1]
+FileName=lesson4.cpp
+Open=0
+Folder=
+Top=0
+
+[Views]
+ProjectView=1
+

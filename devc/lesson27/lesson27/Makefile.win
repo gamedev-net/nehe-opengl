@@ -1,0 +1,29 @@
+# Project: Lesson27
+# Makefile created by Dev-C++ 4.9.8.1
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = Lesson27.o $(RES)
+LINKOBJ  = Lesson27.o $(RES)
+LIBS =  -L"N:/Dev-C++/lib" -mwindows -lopengl32 -lglu32 -lglaux -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32 
+INCS =  -I"N:/Dev-C++/include" 
+CXXINCS =  -I"N:/Dev-C++/include/c++"  -I"N:/Dev-C++/include/c++/mingw32"  -I"N:/Dev-C++/include/c++/backward"  -I"N:/Dev-C++/include"  -I"N:/Dev-C++/include/GL" 
+BIN  = Lesson27.exe
+CXXFLAGS = $(CXXINCS) 
+CFLAGS = $(INCS)-D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS   -fmessage-length=0
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson27.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(LINKOBJ)
+	$(CPP) $(LINKOBJ) -o "Lesson27.exe" $(LIBS)
+
+Lesson27.o: Lesson27.cpp
+	$(CPP) -c Lesson27.cpp -o Lesson27.o $(CXXFLAGS)

@@ -1,0 +1,41 @@
+DM_BITSPERPEL       = 00040000h
+DM_PELSWIDTH        = 00080000h
+DM_PELSHEIGHT       = 00100000h
+
+_glClearDepth MACRO t                   ;this is not defined in hardcode's include files
+    gl_dpush t                          ;so here it is.
+    mov eax, eax
+    mov ecx, ecx
+    call glClearDepth
+ENDM
+
+_glColor4f MACRO R,G,B,A
+    gl_fpush A
+    gl_fpush B
+    gl_fpush G
+    gl_fpush R
+    mov eax, eax			;without this crap, it fucks up
+    mov ecx, ecx			;don't ask me why...
+    call glColor4f
+ENDM
+
+_glClearColor MACRO a,b,c,d
+    gl_fpush d
+    gl_fpush c
+    gl_fpush b
+    gl_fpush a
+    mov eax, eax
+    mov ecx, ecx
+    call glClearColor
+ENDM
+
+_gluPerspective MACRO a,b,c,d
+    gl_dpush d
+    gl_dpush c
+    gl_dpush b
+    gl_dpush a
+    mov eax, eax
+    mov ecx, ecx
+    call gluPerspective
+ENDM
+

@@ -1,0 +1,566 @@
+include get.e
+include dll.e
+include machine.e
+include msgbox.e
+include constants.ew
+include GLfunc.ew
+include GLconst.ew
+
+without warning
+
+atom hRC, hDC, hWnd, hInstance, ClassName
+sequence keys keys = repeat(0,256)  -- array to hold key presses
+
+integer retval
+hRC = NULL
+hDC = NULL
+hWnd = NULL
+hInstance = NULL
+
+integer g_isProgramLooping, g_createFullScreen, isVisible, isFullScreen
+atom lastTickCount
+
+atom MATRIX, POLYGON
+MATRIX = allocate(16*4)
+POLYGON = NULL
+
+integer outlineDraw, outlineSmooth, lightRotate, modelRotate, polyNum
+atom outlineColor,outlineWidth, lightAngle, modelAngle, shaderTexture
+outlineDraw = 1
+outlineSmooth = 0
+outlineWidth = 3.0
+outlineColor = allocate(12)
+lightAngle = allocate(12)
+lightRotate = 0
+modelAngle = 0.0
+modelRotate = 0
+polyNum = 0
+shaderTexture = allocate(4)
+
+procedure TerminateApplication()							-- Terminate The Application
+	c_proc(PostMessage,{hWnd, WM_QUIT, 0, 0})							-- Send A WM_QUIT Message
+	g_isProgramLooping = FALSE										-- Stop Looping Of The Program
+end procedure
+
+procedure ToggleFullscreen()								-- Toggle Fullscreen/Windowed
+	c_proc(PostMessage,{hWnd, WM_TOGGLEFULLSCREEN, 0, 0})			-- Send A WM_TOGGLEFULLSCREEN Message
+end procedure
+
+function ReadMesh ()						-- Reads The Contents Of The "model.txt" File
+atom FILE
+
+	FILE = open ("Data\\Model.txt", "rb")		-- Open The File
+	if FILE = -1 then
+		return FALSE					-- Return FALSE If File Not Opened
+	else
+		polyNum = bytes_to_int(get_bytes(FILE,4))			-- Read The Header (i.e. Number Of Polygons)
+		POLYGON = allocate(72 * polyNum)			-- Allocate The Memory
+		poke(POLYGON, get_bytes(FILE,72*polyNum))-- Read In All Polygon Data
+		close(FILE)						-- Close The File
+		return TRUE						-- It Worked
+	end if
+
+end function
+
+function DotProduct (atom V1, atom V2)		-- Calculate The Angle Between The 2 Vectors
+	return (float32_to_atom(peek({V1,4})) * float32_to_atom(peek({V2,4})) + float32_to_atom(peek({V1+4,4})) * float32_to_atom(peek({V2+4,4}))
+										    + float32_to_atom(peek({V1+8,4})) * float32_to_atom(peek({V2+8,4})))  	-- Return The Angle
+end function
+
+function Magnitude (atom V)				-- Calculate The Length Of The Vector
+	return sqrt(power(float32_to_atom(peek({V,4})),2) + power(float32_to_atom(peek({V+4,4})),2) + power(float32_to_atom(peek({V+8,4})),2))	-- Return The Length Of The Vector
+end function
+
+procedure Normalize (atom V)					-- Creates A Vector With A Unit Length Of 1
+atom M
+
+	M = Magnitude (V)				-- Calculate The Length Of The Vector 
+
+	if  M != 0.0 then					-- Make Sure We Don't Divide By 0 
+		poke(V,atom_to_float32(float32_to_atom(peek({V,4}))/M))				-- Normalize The 3 Components 
+		poke(V+4,atom_to_float32(float32_to_atom(peek({V+4,4}))/M))
+		poke(V+8,atom_to_float32(float32_to_atom(peek({V+8,4}))/M))
+	end if
+end procedure
+
+procedure RotateVector (atom M, atom V, atom D)		-- Rotate A Vector Using The Supplied Matrix
+	poke(D, atom_to_float32((float32_to_atom(peek({M,4})) * float32_to_atom(peek({V,4}))) + 
+											   (float32_to_atom(peek({M+16,4})) * float32_to_atom(peek({V+4,4}))) + 
+											   (float32_to_atom(peek({M+32,4})) * float32_to_atom(peek({V+8,4})))))	-- Rotate Around The X Axis
+	poke(D+4,atom_to_float32((float32_to_atom(peek({M+4,4})) * float32_to_atom(peek({V,4}))) + 
+												   (float32_to_atom(peek({M+20,4})) * float32_to_atom(peek({V+4,4}))) + 
+												   (float32_to_atom(peek({M+36,4}))  * float32_to_atom(peek({V+8,4})))))	-- Rotate Around The Y Axis
+	poke(D+8,atom_to_float32((float32_to_atom(peek({M+8,4})) * float32_to_atom(peek({V,4}))) + 
+												   (float32_to_atom(peek({M+24,4})) * float32_to_atom(peek({V+4,4}))) + 
+												   (float32_to_atom(peek({M+40,4})) * float32_to_atom(peek({V+8,4})))))	-- Rotate Around The Z Axis
+end procedure
+
+-- Engine Functions
+function Initialize()					-- Any GL Init Code & User Initialiazation Goes Here
+atom FILE
+
+object Line												
+atom shaderData  			 								-- Storate For The 96 Shader Values 
+			
+	shaderData = allocate(384)
+
+	-- Start Of User Initialization
+	c_proc(glHint ,{GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST})			-- Realy Nice perspective calculations
+	
+	c_proc(glClearColor,{0.7, 0.7, 0.7, 0.0})						-- Light Grey Background
+	c_proc(glClearDepth,{1.0})										-- Depth Buffer Setup
+
+	c_proc(glEnable,{GL_DEPTH_TEST})									-- Enable Depth Testing
+	c_proc(glDepthFunc,{GL_LESS})										-- The Type Of Depth Test To Do
+
+	c_proc(glShadeModel,{GL_SMOOTH})									-- Enables Smooth Color Shading
+	c_proc(glDisable,{GL_LINE_SMOOTH})									-- Initially Disable Line Smoothing
+
+	c_proc(glEnable,{GL_CULL_FACE})									-- Enable OpenGL Face Culling
+
+	c_proc(glDisable,{GL_LIGHTING})									-- Disable OpenGL Lighting
+
+	FILE = open ("Data\\Shader.txt", "r")						-- Open The Shader File 
+	if FILE = -1 then
+		return FALSE
+	else
+		for i = 0 to 31 do								-- Loop Though The 32 Greyscale Values 
+			Line = gets(FILE)								-- Get The Current Line 
+			Line = value(Line[1..length(Line)-1])
+			Line = Line[2]
+			poke(shaderData + i * 12,atom_to_float32(Line))
+			poke(shaderData + i * 12 + 4,atom_to_float32(Line))
+			poke(shaderData + i * 12 + 8,atom_to_float32(Line))
+		end for
+		close (FILE)											-- Close The File 
+	end if
+
+	c_proc(glGenTextures,{1, shaderTexture})						-- Get A Free Texture ID
+
+	c_proc(glBindTexture ,{GL_TEXTURE_1D, peek4u(shaderTexture)})			-- Bind This Texture. From Now On It Will Be 1D 
+
+	-- For Crying Out Loud Don't Let OpenGL Use Bi/Trilinear Filtering! 
+	c_proc(glTexParameteri ,{GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST})	
+	c_proc(glTexParameteri ,{GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST})
+
+	c_proc(glTexImage1D,{GL_TEXTURE_1D, 0, GL_RGB, 32, 0, GL_RGB , GL_FLOAT, shaderData})	-- Upload 
+
+	poke(lightAngle,atom_to_float32(0.0))										-- Set The X Direction 
+	poke(lightAngle+4,atom_to_float32(0.0))										-- Set The Y Direction
+	poke(lightAngle+8,atom_to_float32(1.0))										-- Set The Z Direction
+
+	Normalize(lightAngle)										-- Normalize The Light Direction
+
+	return ReadMesh()											-- Return The Value Of ReadMesh
+end function
+
+procedure Deinitialize()										-- Any User DeInitialization Goes Here
+	c_proc(glDeleteTextures ,{1, shaderTexture})					-- Delete The Shader Texture
+	free(POLYGON)											-- Delete The Polygon Data 
+end procedure
+
+procedure Update(atom milliseconds)								-- Perform Motion Updates Here
+	if keys[VK_ESCAPE] = TRUE then					-- Is ESC Being Pressed?
+		TerminateApplication()						-- Terminate The Program
+	end if
+
+	if keys[VK_F1] = TRUE then						-- Is F1 Being Pressed?
+		ToggleFullscreen()							-- Toggle Fullscreen Mode
+	end if
+
+	if keys[' '] = TRUE then							-- Is the Space Bar Being Pressed?
+		modelRotate = not modelRotate								-- Toggle Model Rotation On/Off
+		keys[' '] = FALSE
+	end if
+
+	if keys['1'] = TRUE then							-- Is The Number 1 Being Pressed? 
+		outlineDraw = not outlineDraw								-- Toggle Outline Drawing On/Off 
+		keys['1'] = FALSE
+	end if
+
+	if keys['2'] = TRUE then						-- Is The Number 2 Being Pressed? 
+		outlineSmooth = not outlineSmooth							-- Toggle Anti-Aliasing On/Off 
+		keys['2'] = FALSE
+	end if
+
+	if keys[VK_UP] = TRUE then						-- Is The Up Arrow Being Pressed? 
+		outlineWidth += 1											-- Increase Line Width 
+		keys[VK_UP] = FALSE
+	end if
+
+	if keys[VK_DOWN] = TRUE then						-- Is The Down Arrow Being Pressed? 
+		outlineWidth -= 1											-- Decrease Line Width 
+		keys[VK_DOWN] = FALSE
+	end if
+
+	if  modelRotate then											-- Check To See If Rotation Is Enabled 
+		modelAngle += (milliseconds/10.0)			-- Update Angle Based On The Clock
+	end if
+end procedure
+
+procedure Draw()
+atom TmpShade												-- Temporary Shader Value
+atom TmpMatrix											-- Temporary MATRIX Structure 
+atom TmpVector, TmpNormal								-- Temporary VECTOR Structures 
+
+	TmpMatrix = allocate(64)
+	TmpVector = allocate(16)
+	TmpNormal = allocate(16)
+	
+	c_proc(glClear,{GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT})		-- Clear The Buffers
+	c_proc(glLoadIdentity,{})											-- Reset The Matrix
+
+	if  outlineSmooth then										-- Check To See If We Want Anti-Aliased Lines 
+		c_proc(glHint,{GL_LINE_SMOOTH_HINT, GL_NICEST})				-- Use The Good Calculations 
+		c_proc(glEnable,{GL_LINE_SMOOTH})								-- Enable Anti-Aliasing 
+	else														-- We Don't Want Smooth Lines 
+		c_proc(glDisable,{GL_LINE_SMOOTH})								-- Disable Anti-Aliasing 
+	end if
+	
+	c_proc(glTranslatef,{0.0, 0.0, -2.0})							-- Move 2 Units Away From The Screen 
+	c_proc(glRotatef ,{modelAngle, 0.0, 1.0, 0.0})					-- Rotate The Model On It's Y-Axis 
+
+	c_proc(glGetFloatv,{GL_MODELVIEW_MATRIX, TmpMatrix})			-- Get The Generated Matrix 
+
+	-- Cel-Shading Code --
+	c_proc(glEnable,{GL_TEXTURE_1D})									-- Enable 1D Texturing 
+	c_proc(glBindTexture,{GL_TEXTURE_1D, peek4u(shaderTexture)})			-- Bind Our Texture 
+
+	c_proc(glColor3f,{1.0, 1.0, 1.0})								-- Set The Color Of The Model 
+
+	c_proc(glBegin,{GL_TRIANGLES})										-- Tell OpenGL That We're Drawing Triangles
+
+		for i = 0 to polyNum-1 do							-- Loop Through Each Polygon 
+			for j = 0 to 2 do								-- Loop Through Each Vertex 
+				poke(TmpNormal,peek({POLYGON + (i*72) + (j*24),4}))		-- Fill Up The TmpNormal Structure With
+				poke(TmpNormal+4,peek({POLYGON + (i*72) + (j*24) + 4,4}))		-- The Current Vertices' Normal Values 
+				poke(TmpNormal+8,peek({POLYGON + (i*72) + (j*24) + 8,4}))
+
+				RotateVector (TmpMatrix, TmpNormal, TmpVector)	-- Rotate This By The Matrix 
+
+				Normalize (TmpVector)							-- Normalize The New Normal 
+
+				TmpShade = DotProduct (TmpVector, lightAngle)	-- Calculate The Shade Value 
+
+				if  TmpShade < 0.0 then
+					TmpShade = 0.0							-- Clamp The Value to 0 If Negative
+				end if 
+
+				c_proc(glTexCoord1f ,{TmpShade})						-- Set The Texture Co-ordinate As The Shade Value 
+				c_proc(glVertex3fv ,{POLYGON + (i*72) + (j*24)+12})		-- Send The Vertex Position 
+		    end for
+		end for
+
+    c_proc(glEnd,{})													-- Tell OpenGL To Finish Drawing
+
+	c_proc(glDisable ,{GL_TEXTURE_1D})									-- Disable 1D Textures 
+
+	-- Outline Code --
+	if  outlineDraw then											-- Check To See If We Want To Draw The Outline 
+		c_proc(glEnable ,{GL_BLEND})									-- Enable Blending 
+		c_proc(glBlendFunc,{GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA})		-- Set The Blend Mode 
+
+		c_proc(glPolygonMode,{GL_BACK, GL_LINE})						-- Draw Backfacing Polygons As Wireframes 
+		c_proc(glLineWidth ,{outlineWidth})								-- Set The Line Width 
+
+		c_proc(glCullFace ,{GL_FRONT})									-- Don't Draw Any Front-Facing Polygons 
+
+		c_proc(glDepthFunc,{GL_LEQUAL})								-- Change The Depth Mode 
+
+		c_proc(glColor3fv,{outlineColor})							-- Set The Outline Color 
+
+		c_proc(glBegin,{GL_TRIANGLES})									-- Tell OpenGL What We Want To Draw
+
+		for i = 0 to polyNum-1 do						-- Loop Through Each Polygon 
+			for j = 0 to 2 do							-- Loop Through Each Vertex 
+				c_proc(glVertex3fv,{POLYGON + (i*72) + (j*24)+12})	-- Send The Vertex Position 
+			end for
+		end for
+
+		c_proc(glEnd ,{})												-- Tell OpenGL We've Finished
+
+		c_proc(glDepthFunc,{GL_LESS})									-- Reset The Depth-Testing Mode 
+
+		c_proc(glCullFace,{GL_BACK})									-- Reset The Face To Be Culled 
+
+		c_proc(glPolygonMode,{GL_BACK, GL_FILL})						-- Reset Back-Facing Polygon Drawing Mode 
+
+		c_proc(glDisable ,{GL_BLEND})									-- Disable Blending 
+	end if
+end procedure
+
+procedure ReshapeGL(integer width, integer height)
+    if height = 0 then
+        height = 1
+    end if
+    c_proc(glViewport,{0,0,width,height})
+    c_proc(glMatrixMode,{GL_PROJECTION})
+    c_proc(glLoadIdentity,{})
+    c_proc(gluPerspective,{45.0,width/height,0.1,100.0})
+    c_proc(glMatrixMode,{GL_MODELVIEW})
+    c_proc(glLoadIdentity,{})
+end procedure
+
+atom dmScreenSettings, WindowRect
+
+function ChangeScreenResolution(integer width, integer height, integer bits)
+        dmScreenSettings = allocate(148)  --DEVMODE structure
+        mem_set(dmScreenSettings,0,148)  --clear the structure
+        poke4(dmScreenSettings + 36,148)  --dmSize
+		poke4(dmScreenSettings + 40,or_all({DM_BITSPERPEL,DM_PELSWIDTH,DM_PELSHEIGHT}))   --dmFields
+		poke4(dmScreenSettings + 104, bits)
+		poke4(dmScreenSettings + 108, width)
+		poke4(dmScreenSettings + 112, height)
+        if c_func(ChangeDisplaySettingsA,{dmScreenSettings,CDS_FULLSCREEN}) != DISP_CHANGE_SUCCESSFUL then  --if the change wasn't successful
+        	return FALSE
+        end if
+        return TRUE
+end function
+
+function WndProc(atom hWnd, integer uMsg, atom wParam, atom lParam)
+    if uMsg = WM_SYSCOMMAND then
+        if wParam = SC_SCREENSAVE then end if
+        if wParam = SC_MONITORPOWER then end if
+        return 0
+    elsif uMsg = WM_CLOSE then
+        TerminateApplication()
+        return 0
+     elsif uMsg = WM_SIZE then
+     	if wParam = SIZE_MINIMIZED then
+     		isVisible = FALSE
+     		return 0
+     	elsif wParam = SIZE_MAXIMIZED then
+     		isVisible = TRUE
+     		ReshapeGL(and_bits(lParam,#FFFF),floor(lParam/#10000))
+     		return 0
+     	elsif wParam = SIZE_RESTORED then
+     		isVisible = TRUE
+     		ReshapeGL(and_bits(lParam,#FFFF),floor(lParam/#10000))
+     		return 0
+    	end if
+    elsif uMsg = WM_KEYDOWN then
+    	if wParam >= 0 and wParam <= 255 then
+        	keys[wParam] = TRUE
+        	return 0
+        end if
+    elsif uMsg = WM_KEYUP then
+    	if wParam >= 0 and wParam <= 255 then
+        	keys[wParam] = FALSE
+        	return 0
+        end if
+    elsif uMsg = WM_TOGGLEFULLSCREEN then
+        isFullScreen = not isFullScreen
+        retval = c_func(PostMessage,{hWnd, WM_QUIT, 0, 0})
+        return 0
+    end if
+    return c_func(DefWindowProcA,{hWnd, uMsg, wParam, lParam})
+end function
+
+function RegisterWindowClass()
+atom wc
+integer WndProcAddress, id
+	wc = allocate(40)
+    id = routine_id("WndProc")
+    if id = -1 then
+    	puts(1, "routine_id failed!\n")
+    	abort(1)
+    end if
+    WndProcAddress = call_back(id)
+    hInstance = c_func(GetModuleHandleA,{NULL})
+    ClassName = allocate_string("OpenGL")
+    poke4(wc,or_all({CS_HREDRAW, CS_VREDRAW, CS_OWNDC}))
+    poke4(wc+4,WndProcAddress)
+    poke4(wc+8,0)
+    poke4(wc+12,0)
+    poke4(wc+16,hInstance)
+    poke4(wc+20,c_func(LoadIconA,{NULL,IDI_WINLOGO}))
+    poke4(wc+24,c_func(LoadCursorA,{NULL, IDC_ARROW}))
+    poke4(wc+28,NULL)
+    poke4(wc+32,NULL)
+    poke4(wc+36,ClassName)
+    if not c_func(RegisterClassA,{wc}) then
+        retval = message_box("Failed to register class","Error", or_bits(MB_OK,MB_ICONINFORMATION))
+        return FALSE
+    else
+        return TRUE
+    end if
+
+    free(wc)
+end function
+
+function CreateGLWindow(atom title, integer width, integer height, integer bits)
+atom PixelFormat, pfd, dwExStyle, dwStyle,fn
+
+	dwStyle = WS_OVERLAPPEDWINDOW
+	dwExStyle = WS_EX_APPWINDOW
+	pfd = allocate(40)  --PIXELFORMATDESCRIPTOR
+    mem_set(pfd,0,40)
+    poke(pfd, 40)  --size of pfd structure
+    poke(pfd + 2, 1) --version
+    poke4(pfd + 4, or_all({PFD_DRAW_TO_WINDOW,PFD_SUPPORT_OPENGL,PFD_DOUBLEBUFFER})) --properties flags
+    poke(pfd + 8, PFD_TYPE_RGBA)  --request an rgba format
+    poke(pfd + 9, 24)  --select color depth
+    poke(pfd + 23, bits)  --32bit Z-buffer
+
+    WindowRect = allocate(16)    
+    poke4(WindowRect,0)
+    poke4(WindowRect + 4,width)
+    poke4(WindowRect + 8, 0)
+    poke4(WindowRect + 12, height)
+
+    if isFullScreen then  --change screen resolution to match window size
+    	if ChangeScreenResolution(width,height,bits) = FALSE then
+    		retval = message_box("Mode switch failed.\nRunning in windowed mode.","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    		isFullScreen = FALSE
+    		dwStyle = 
+    		dwExStyle = FALSE
+    	else
+       		retval = c_func(ShowCursor,{FALSE})
+        	dwStyle = WS_POPUP
+        	dwExStyle = WS_EX_TOPMOST
+    	end if
+    else
+    	retval = c_func(AdjustWindowRectEx,{WindowRect, dwStyle, FALSE, dwExStyle})
+    end if
+
+    hWnd = c_func(CreateWindowExA,{dwExStyle,  --extended window style
+                                   ClassName,  --class
+                                   title,      --window caption
+                                   or_all({WS_CLIPSIBLINGS,WS_CLIPCHILDREN,dwStyle}),  --window style
+                                   0,
+                                   0,
+                                   peek4u(WindowRect + 4) - peek4u(WindowRect),
+                                   peek4u(WindowRect + 12) - peek4u(WindowRect + 8),
+                                   NULL,
+                                   NULL,
+                                   hInstance,
+                                   NULL})
+    if hWnd = NULL then
+        return FALSE
+    end if
+    hDC = c_func(GetDC,{hWnd})  --create GL device context to match window device context
+    if not hDC then
+        retval = c_func(DestroyWindow,{hWnd})
+        hWnd = 0
+        return FALSE
+    end if
+    PixelFormat = c_func(ChoosePixelFormat,{hDC,pfd})  --find a pixel format matching PIXELFORMATDESCRIPTOR
+    if not PixelFormat then
+        retval = c_func(ReleaseDC,{hWnd,hDC})
+        hDC = 0
+        retval = c_func(DestroyWindow,{hWnd})
+        hWnd = 0
+        return FALSE
+    end if
+    if c_func(SetPixelFormat,{hDC,PixelFormat,pfd}) = FALSE then  --set the pixel format
+        retval = c_func(ReleaseDC,{hWnd,hDC})
+        hDC = 0
+        retval = c_func(DestroyWindow,{hWnd})
+        hWnd = 0
+        return FALSE
+    end if
+    hRC = c_func(wglCreateContext,{hDC})  --create GL rendering context
+    if not hRC then
+        retval = c_func(ReleaseDC,{hWnd,hDC})
+        hDC = 0
+        retval = c_func(DestroyWindow,{hWnd})
+        hWnd = 0
+        return FALSE
+    end if
+    if not c_func(wglMakeCurrent,{hDC,hRC}) then  --make the GL rendering context active
+    	retval = c_func(wglDeleteContext,{hRC})
+    	hRC = 0
+        retval = c_func(ReleaseDC,{hWnd,hDC})
+        hDC = 0
+        retval = c_func(DestroyWindow,{hWnd})
+        hWnd = 0
+        return FALSE
+    end if
+    retval = c_func(ShowWindow,{hWnd,SW_NORMAL}) --show the window
+    isVisible = TRUE
+    ReshapeGL(width, height)  --draw the GL scene to match the window size
+    keys = repeat(0,256)
+    lastTickCount = c_func(GetTickCount,{})
+
+    return TRUE
+end function
+
+function DestroyWindowGL()								-- Destroy The OpenGL Window & Release Resources
+	if  hWnd != 0 then											-- Does The Window Have A Handle?
+		if  hDC != 0 then										-- Does The Window Have A Device Context?
+			retval = c_func(wglMakeCurrent ,{hDC, 0})							-- Set The Current Active Rendering Context To Zero
+			if  hRC != 0 then									-- Does The Window Have A Rendering Context?
+				retval = c_func(wglDeleteContext,{hRC})							-- Release The Rendering Context
+				hRC = 0										-- Zero The Rendering Context
+			end if
+			retval = c_func(ReleaseDC,{hWnd, hDC})						-- Release The Device Context
+			hDC = 0											-- Zero The Device Context
+		end if
+		retval = c_func(DestroyWindow,{hWnd})									-- Destroy The Window
+		hWnd = 0												-- Zero The Window Handle
+	end if
+
+	if isFullScreen then									-- Is Window In Fullscreen Mode
+		retval = c_func(ChangeDisplaySettingsA,{NULL,0})									-- Switch Back To Desktop Resolution
+		retval = c_func(ShowCursor,{TRUE})												-- Show The Cursor
+	end if	
+	return TRUE														-- Return True
+end function
+
+integer MSG MSG = allocate(28)
+integer title title = allocate_string("NeHe's Cell Shading Tutorial")
+function WinMain()
+integer msg_message, isMessagePumpActive
+atom tickCount
+
+    if message_box("Would you like to run in fullscreen mode?","Start Fullscreen?",or_bits(MB_YESNO,MB_ICONQUESTION)) = IDNO then
+        isFullScreen = FALSE
+    else
+        isFullScreen = TRUE
+    end if
+    if RegisterWindowClass() = FALSE then
+    	retval = message_box("Error registering class!","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    	return -1
+    end if
+    g_isProgramLooping = TRUE
+    g_createFullScreen = isFullScreen
+    while g_isProgramLooping do
+    	isFullScreen = g_createFullScreen
+    	if CreateGLWindow(title,640,480,24) then
+    		if Initialize() = FALSE then
+    			TerminateApplication()
+    		else
+    			isMessagePumpActive = TRUE
+    			while isMessagePumpActive = TRUE do
+    				if c_func(PeekMessageA,{MSG,NULL,0,0,PM_REMOVE}) then
+            			msg_message = peek4u(MSG+4)
+            			if msg_message != WM_QUIT then
+                			retval = c_func(DispatchMessageA,{MSG})
+            			else
+            				isMessagePumpActive = FALSE
+            			end if
+            		else
+            			if isVisible = FALSE then
+            				retval = c_func(WaitMessage,{})
+            			else
+            				tickCount = c_func(GetTickCount,{})
+            				Update(tickCount-lastTickCount)
+            				lastTickCount = tickCount
+            				Draw()
+            				retval = c_func(SwapBuffers,{hDC})	
+            			end if
+            		end if
+            	end while
+            end if
+			Deinitialize()
+			retval = DestroyWindowGL()
+		else
+			retval = message_box("Error creating OpenGL window","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+			g_isProgramLooping = FALSE
+		end if
+    end while
+    retval = c_func(UnregisterClassA,{ClassName,hInstance})
+    return 0
+end function
+
+retval= WinMain()

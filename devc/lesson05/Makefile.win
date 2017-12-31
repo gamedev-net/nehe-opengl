@@ -1,0 +1,27 @@
+# Project: Lesson5
+# Makefile created by Dev-C++ 4.9.7.0
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = lesson5.o $(RES)
+LIBS =  -L"C:/DEVCPP497/lib" -mwindows -lopengl32 -lglu32 -lglaux -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32
+INCS =  -I"C:/DEVCPP497/include"  -I"C:/DEVCPP497/include/c++"  -I"C:/DEVCPP497/include" 
+BIN  = Lesson5.exe
+CXXFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson5.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(OBJ) -o "Lesson5.exe" $(LIBS) $(CXXFLAGS)
+
+lesson5.o: lesson5.cpp
+	$(CPP) -c lesson5.cpp -o lesson5.o $(CXXFLAGS)

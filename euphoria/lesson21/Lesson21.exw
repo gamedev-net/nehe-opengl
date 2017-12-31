@@ -1,0 +1,802 @@
+include get.e
+include dll.e
+include machine.e
+include msgbox.e
+include constants.ew
+include GLfunc.ew
+include GLconst.ew
+
+without warning
+
+atom hRC, hDC, hWnd, hInstance, ClassName
+sequence keys keys = repeat(0,256)  -- array to hold key presses
+
+integer active, fullscreen, retval
+active = TRUE
+fullscreen = TRUE
+hRC = NULL
+hDC = NULL
+hWnd = NULL
+hInstance = NULL
+
+integer base, ap, filled, gameover, anti, delay, adjust, lives, level, level2, stage
+gameover = FALSE
+anti = TRUE
+delay = 0
+adjust = 3
+lives = 5
+level = 1
+level2 = level
+stage = 1
+
+sequence vline, hline, player, enemy, hourglass, steps
+integer x, y, fx, fy, spin
+vline = repeat(repeat(0,10),11)
+hline = repeat(repeat(0,11),10)
+player = {0,0,0,0,0.0}
+hourglass = {0,0,0,0,0.0}
+enemy = repeat({0,0,0,0,0.0},9)
+steps = { 1, 2, 4, 5, 10, 20 }
+x = 1
+y = 2
+fx = 3
+fy = 4
+spin = 5
+
+atom timer
+constant
+frequency = 0,                  -- 8 bytes
+resolution = 8,                 -- 4 bytes
+mm_timer_start = 12,            -- 4 bytes
+mm_timer_elapsed = 16,          -- 4 bytes
+performance_timer = 20,         -- 1 byte
+performance_timer_start = 21,   -- 8 bytes
+performance_timer_elapsed = 29, -- 8 bytes
+sizeof_timer = 37
+
+timer = allocate(sizeof_timer)
+
+atom Texture
+sequence texture
+Texture = allocate(8)
+texture = {Texture,Texture + 4}
+
+atom ddv, dcv, dfv, dhv                                                         --sound files
+ddv = allocate_string("Data\\Die.wav")
+dcv = allocate_string("Data\\Complete.wav")
+dfv = allocate_string("Data\\freeze.wav")
+dhv = allocate_string("Data\\hourglass.wav")
+
+procedure TimerInit()
+    mem_set(timer,0,sizeof_timer)
+
+    if not c_func(QueryPerformanceFrequency,{timer+frequency}) then
+        poke(timer+performance_timer,0)
+        poke4(timer+mm_timer_start,c_func(timeGetTime,{}))
+        poke4(timer+resolution,atom_to_float32(.001))
+        poke4(timer+frequency,1000)
+        poke4(timer+mm_timer_elapsed,peek4u(timer+mm_timer_start))
+    else
+        retval = c_func(QueryPerformanceCounter,{timer+performance_timer_start})
+        poke(timer+performance_timer,1)
+        poke4(timer+resolution,atom_to_float32(1.0/peek4u(timer+frequency)))
+        poke4(timer+performance_timer_elapsed,peek4u(timer+performance_timer_start))
+        poke4(timer+performance_timer_elapsed+4,peek4u(timer+performance_timer_start+4))
+    end if
+end procedure
+
+function TimerGetTime()
+atom the_time, t1, t2, pt1, pt2
+    the_time = allocate(8)
+    if peek(timer+performance_timer) then
+        retval = c_func(QueryPerformanceCounter,{the_time})
+        t1 = peek4u(the_time)
+        t2 = peek4u(the_time+4)
+        pt1 = peek4u(timer+performance_timer_start)
+        pt2 = peek4u(timer+performance_timer_start+4)
+        free(the_time)
+        return ((t1 + t2 * power(2,32)) - (pt1 + pt2 * power(2,32))) * peek4u(timer + resolution) * 1000.0
+    else
+        free(the_time)
+        return ((c_func(timeGetTime, {}) - peek4u(timer+mm_timer_start)) * peek4u(timer+resolution)) * 1000.0
+    end if
+end function
+
+procedure ResetObjects()
+    player[x] = 0
+    player[y] = 0
+    player[fx] = 0
+    player[fy] = 0
+
+    for loop = 1 to stage * level do
+        enemy[loop][x] = 5 + rand(6)
+        enemy[loop][y] = rand(11)
+        enemy[loop][fx] = enemy[loop][x] * 60
+        enemy[loop][fy] = enemy[loop][y] * 40
+    end for
+end procedure
+
+function LoadBMP(sequence Filename)
+integer File
+atom filename
+    filename = allocate_string(Filename)
+    File = NULL
+    if atom(Filename) then
+        return NULL
+    end if
+    File = open(Filename,"r")
+    if File then
+        close(File)
+        return c_func(auxDIBImageLoad, {filename})
+    end if
+    return NULL
+end function
+
+function LoadGLTextures()
+integer Status
+sequence TextureImage
+    Status = FALSE
+    TextureImage = {0,0}
+    TextureImage[1] = LoadBMP("Data\\Font.bmp")
+    TextureImage[2] = LoadBMP("Data\\Image.bmp")
+    if TextureImage[1] and TextureImage[2] then
+        Status = TRUE
+        c_proc(glGenTextures, {2,texture[1]})
+        for loop = 1 to 2 do
+            c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(texture[loop])})
+            c_proc(glTexParameteri,{GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR})
+            c_proc(glTexParameteri,{GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR})
+            c_proc(glTexImage2D,{GL_TEXTURE_2D, 0, 3, peek4u(TextureImage[loop]), peek4u(TextureImage[loop]+4), 0, GL_RGB,
+                                 GL_UNSIGNED_BYTE, peek4u(TextureImage[loop]+8)})
+        end for
+    end if
+    for loop = 1 to 2 do
+        if peek4u(TextureImage[loop]) then
+            if peek4u(TextureImage[loop] + 8) then
+                free(peek4u(TextureImage[loop]+8))
+            end if
+            free(peek4u(TextureImage[loop]))
+        end if
+    end for
+    return Status
+end function
+
+procedure BuildFont()
+atom cx, cy
+
+    base = c_func(glGenLists,{256})
+    c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(texture[1])})
+
+    for loop = 0 to 255 do
+        cx=remainder(loop,16.0)/16.0                      -- X Position Of Current Character
+        cy=floor(loop/16)/16                           -- Y Position Of Current Character
+
+        c_proc(glNewList,{base+loop,GL_COMPILE})        -- Start Building A List
+            c_proc(glBegin,{GL_QUADS})                  -- Use A Quad For Each Character
+                c_proc(glTexCoord2f,{cx+0.015,1-cy-0.0625})   -- Texture Coord (Bottom Left)
+                c_proc(glVertex2i,{0,16})                -- Vertex Coord (Bottom Left)
+                c_proc(glTexCoord2f,{cx+0.0625+0.015,1-cy-0.0625})    -- Texture Coord (Bottom Right)
+                c_proc(glVertex2i,{16,16})               -- Vertex Coord (Bottom Right)
+                c_proc(glTexCoord2f,{cx+0.0625+0.015,1-cy})   -- Texture Coord (Top Right)
+                c_proc(glVertex2i,{16,0})              -- Vertex Coord (Top Right)
+                c_proc(glTexCoord2f,{cx+0.015,1-cy})          -- Texture Coord (Top Left)
+                c_proc(glVertex2i,{0,0})                -- Vertex Coord (Top Left)
+            c_proc(glEnd,{})                            -- Done Building Our Quad (Character)
+            c_proc(glTranslated,{10,0,0})               -- Move To The Right Of The Character
+        c_proc(glEndList,{})
+    end for
+end procedure
+
+procedure KillFont()
+    c_proc(glDeleteLists,{base,256})
+end procedure
+
+procedure glPrint(atom x, atom y, sequence text, integer set)
+atom text_loc
+    if set > 1 then
+        set = 1
+    end if
+    text_loc = allocate_string(text)
+    c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(texture[1])})  -- Select Our Font Texture
+    c_proc(glEnable,{GL_TEXTURE_2D})                       -- Disables Depth Testing
+    c_proc(glLoadIdentity,{})                               -- Reset The Projection Matrix
+    c_proc(glTranslated,{x,y,0})                            -- Position The Text (0,0 - Bottom Left)
+    c_proc(glListBase,{base-32+(128*set)})                  -- Choose The Font Set (0 or 1)
+
+    if set = 0 then
+        c_proc(glScalef,{1.5,2.0,1.0})
+    end if
+
+    c_proc(glCallLists,{length(text),GL_BYTE,text_loc})     -- Write The Text To The Screen
+    c_proc(glDisable,{GL_TEXTURE_2D})                        -- Enables Depth Testing
+    free(text_loc)
+end procedure
+
+procedure ReSizeGLScene(integer width, integer height)
+    if height = 0 then
+        height = 1
+    end if
+    c_proc(glViewport,{0,0,width,height})
+    c_proc(glMatrixMode,{GL_PROJECTION})
+    c_proc(glLoadIdentity,{})
+    c_proc(glOrtho,{0.0,width,height,0.0,-1.0,1.0})
+    c_proc(glMatrixMode,{GL_MODELVIEW})
+    c_proc(glLoadIdentity,{})
+end procedure
+
+procedure InitGL()
+    if not LoadGLTextures() then
+        puts(1,"LoadGLTextures failed!" & '\n')
+    end if
+
+    BuildFont()
+
+    c_proc(glShadeModel, {GL_SMOOTH})
+    c_proc(glClearColor,{0.0,0.0,0.0,0.5})
+    c_proc(glClearDepth,{1.0})
+    c_proc(glHint, {GL_LINE_SMOOTH_HINT,GL_NICEST})
+    c_proc(glEnable,{GL_BLEND})
+    c_proc(glBlendFunc,{GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA})
+
+end procedure
+
+function DrawGLScene()
+    c_proc(glClear, {or_bits(GL_COLOR_BUFFER_BIT,GL_DEPTH_BUFFER_BIT)})
+    c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(texture[1])})    -- Select Our First Texture
+    c_proc(glColor3f,{1.0,0.5,1.0})
+    glPrint(207,24,"GRID CRAZY",0)                  -- Write GRID CRAZY On The Screen
+    c_proc(glColor3f,{1.0,1.0,0.0})
+    glPrint(20,20,sprintf("Level:%2d",level2),1)             -- Write Actual Level Stats
+    glPrint(20,40,sprintf("Stage:%2d",stage),1)              -- Write Stage Stats
+
+    if gameover then                                        -- Is The Game Over?
+        c_proc(glColor3ub,{rand(255),rand(255),rand(255)})  -- Pick A Random Color
+        glPrint(472,20,"GAME OVER",1)                       -- Write GAME OVER To The Screen
+        glPrint(456,40,"PRESS SPACE",1)                     -- Write PRESS SPACE To The Screen
+    end if
+
+    for loop1=0 to lives-2 do                               -- Loop Through Lives Minus Current Life
+        c_proc(glLoadIdentity,{})                           -- Reset The View
+        c_proc(glTranslatef,{490+(loop1*40.0),40.0,0.0})    -- Move To The Right Of Our Title Text
+        c_proc(glRotatef,{-player[spin],0.0,0.0,1.0})       -- Rotate Counter Clockwise
+        c_proc(glColor3f,{0.0,1.0,0.0})                     -- Set Player Color To Light Green
+        c_proc(glBegin,{GL_LINES})                          -- Start Drawing Our Player Using Lines
+            c_proc(glVertex2d,{-5,-5})                      -- Top Left Of Player
+            c_proc(glVertex2d,{ 5, 5})                      -- Bottom Right Of Player
+            c_proc(glVertex2d,{ 5,-5})                      -- Top Right Of Player
+            c_proc(glVertex2d,{-5, 5})                      -- Bottom Left Of Player
+        c_proc(glEnd,{})                                    -- Done Drawing The Player
+        c_proc(glRotatef,{-player[spin]*0.5,0.0,0.0,1.0})   -- Rotate Counter Clockwise
+        c_proc(glColor3f,{0.0,0.75,0.0})                   -- Set Player Color To Dark Green
+        c_proc(glBegin,{GL_LINES})                          -- Start Drawing Our Player Using Lines
+            c_proc(glVertex2d,{-7, 0})                      -- Left Center Of Player
+            c_proc(glVertex2d,{ 7, 0})                      -- Right Center Of Player
+            c_proc(glVertex2d,{ 0,-7})                      -- Top Center Of Player
+            c_proc(glVertex2d,{ 0, 7})                      -- Bottom Center Of Player
+        c_proc(glEnd,{})                                    -- Done Drawing The Player
+    end for
+
+    filled=TRUE                                             -- Set Filled To True Before Testing
+    c_proc(glLineWidth,{2.0})                               -- Set Line Width For Cells To 2.0f
+    c_proc(glDisable,{GL_LINE_SMOOTH})                      -- Disable Antialiasing
+    c_proc(glLoadIdentity,{})
+
+    for loop1=1 to 10 do                                    -- Loop >From Left To Right
+        for loop2=1 to 10 do                                -- Loop >From Top To Bottom
+            c_proc(glColor3f,{0.0,0.5,1.0})                 -- Set Line Color To Blue
+            if hline[loop1][loop2] then                     -- Has The Horizontal Line Been Traced
+                c_proc(glColor3f,{1.0,1.0,1.0})             -- If So, Set Line Color To White
+            end if
+            if loop1<10 then                                -- Dont Draw To Far Right
+                if not hline[loop1][loop2] then             -- If A Horizontal Line Isn't Filled
+                    filled=FALSE                            -- filled Becomes False
+                end if
+                c_proc(glBegin,{GL_LINES})                  -- Start Drawing Horizontal Cell Borders
+                    c_proc(glVertex2d,{20+((loop1-1)*60),70+((loop2-1)*40)}) -- Left Side Of Horizontal Line
+                    c_proc(glVertex2d,{80+((loop1-1)*60),70+((loop2-1)*40)}) -- Right Side Of Horizontal Line
+                c_proc(glEnd,{})                                     -- Done Drawing Horizontal Cell Borders
+            end if
+
+            c_proc(glColor3f,{0.0,0.5,1.0})
+            if vline[loop1][loop2] then                     -- Has The Horizontal Line Been Traced
+                c_proc(glColor3f,{1.0,1.0,1.0})             -- If So, Set Line Color To White
+            end if
+            if loop2<10 then                                -- Dont Draw To Far Down
+                if not vline[loop1][loop2] then             -- If A Verticle Line Isn't Filled
+                    filled=FALSE                            -- filled Becomes False
+                end if
+                c_proc(glBegin,{GL_LINES})                  -- Start Drawing Verticle Cell Borders
+                    c_proc(glVertex2d,{20+((loop1-1)*60),70+((loop2-1)*40)}) -- Left Side Of Horizontal Line
+                    c_proc(glVertex2d,{20+((loop1-1)*60),110+((loop2-1)*40)}) -- Right Side Of Horizontal Line
+                c_proc(glEnd,{})                                      -- Done Drawing Verticle Cell Borders
+            end if
+
+            c_proc(glEnable,{GL_TEXTURE_2D})                -- Enable Texture Mapping
+            c_proc(glColor3f,{1.0,1.0,1.0})                 -- Bright White Color
+            c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(texture[2])})   -- Select The Tile Image
+            if loop1<10 and loop2<10 then                   -- If In Bounds, Fill In Traced Boxes
+                -- Are All Sides Of The Box Traced?
+                if hline[loop1][loop2] and hline[loop1][loop2+1] and vline[loop1][loop2] and vline[loop1+1][loop2] then
+                    c_proc(glBegin,{GL_QUADS})                                  -- Draw A Textured Quad
+                        c_proc(glTexCoord2f,{(loop1-1)/10.0+0.1,1.0-((loop2-1)/10.0)})
+                        c_proc(glVertex2d,{20+((loop1-1)*60)+59,(70+(loop2-1)*40+1)})   -- Top Right
+                        c_proc(glTexCoord2f,{(loop1-1)/10.0,1.0-((loop2-1)/10.0)})
+                        c_proc(glVertex2d,{20+((loop1-1)*60)+1,(70+(loop2-1)*40+1)})    -- Top Left
+                        c_proc(glTexCoord2f,{(loop1-1)/10.0,1.0-((loop2-1)/10.0+0.1)})
+                        c_proc(glVertex2d,{20+((loop1-1)*60)+1,(70+(loop2-1)*40)+39})   -- Bottom Left
+                        c_proc(glTexCoord2f,{(loop1-1)/10.0+0.1,1.0-((loop2-1)/10.0)+0.1})
+                        c_proc(glVertex2d,{20+((loop1-1)*60)+59,(70+(loop2-1)*40)+39})  -- Bottom Right
+                    c_proc(glEnd,{})                                            -- Done Texturing The Box
+                end if
+            end if
+
+            c_proc(glDisable,{GL_TEXTURE_2D})
+
+        end for
+    end for
+
+    c_proc(glLineWidth,{1.0})
+
+    if anti then                                            -- Is Anti TRUE?
+        c_proc(glEnable,{GL_LINE_SMOOTH})                   -- If So, Enable Antialiasing
+    end if
+    if hourglass[fx] =1 then                                -- If fx=1 Draw The Hourglass
+        c_proc(glLoadIdentity,{})                           -- Reset The Modelview Matrix
+        c_proc(glTranslatef,{20.0+(hourglass[x]*60),70.0+(hourglass[y]*40),0.0}) -- Move To The Fine Hourglass Position
+        c_proc(glRotatef,{hourglass[spin],0.0,0.0,1.0})     -- Rotate Clockwise
+        c_proc(glColor3ub,{rand(255),rand(255),rand(255)})  -- Set Hourglass Color To Random Color
+        c_proc(glBegin,{GL_LINES})                          -- Start Drawing Our Hourglass Using Lines
+            c_proc(glVertex2d,{-5,-5})                      -- Top Left Of Hourglass
+            c_proc(glVertex2d,{ 5, 5})                      -- Bottom Right Of Hourglass
+            c_proc(glVertex2d,{ 5,-5})                      -- Top Right Of Hourglass
+            c_proc(glVertex2d,{-5, 5})                      -- Bottom Left Of Hourglass
+            c_proc(glVertex2d,{-5, 5})                      -- Bottom Left Of Hourglass
+            c_proc(glVertex2d,{ 5, 5})                      -- Bottom Right Of Hourglass
+            c_proc(glVertex2d,{-5,-5})                      -- Top Left Of Hourglass
+            c_proc(glVertex2d,{ 5,-5})                      -- Top Right Of Hourglass
+        c_proc(glEnd,{})                                    -- Done Drawing The Hourglass
+    end if
+
+    c_proc(glLoadIdentity,{})                                   -- Reset The Modelview Matrix
+    c_proc(glTranslatef,{player[fx]+20.0,player[fy]+70.0,0.0})  -- Move To The Fine Player Position
+    c_proc(glRotatef,{player[spin],0.0,0.0,1.0})                -- Rotate Clockwise
+    c_proc(glColor3f,{0.0,1.0,0.0})                             -- Set Player Color To Light Green
+    c_proc(glBegin,{GL_LINES})                                  -- Start Drawing Our Player Using Lines
+        c_proc(glVertex2d,{-5,-5})                              -- Top Left Of Player
+        c_proc(glVertex2d,{ 5, 5})                              -- Bottom Right Of Player
+        c_proc(glVertex2d,{ 5,-5})                              -- Top Right Of Player
+        c_proc(glVertex2d,{-5, 5})                              -- Bottom Left Of Player
+    c_proc(glEnd,{})                                            -- Done Drawing The Player
+    c_proc(glRotatef,{player[spin]*0.5,0.0,0.0,1.0})            -- Rotate Clockwise
+    c_proc(glColor3f,{0.0,0.75,0.0})                            -- Set Player Color To Dark Green
+    c_proc(glBegin,{GL_LINES})                                  -- Start Drawing Our Player Using Lines
+        c_proc(glVertex2d,{-7, 0})                              -- Left Center Of Player
+        c_proc(glVertex2d,{ 7, 0})                              -- Right Center Of Player
+        c_proc(glVertex2d,{ 0,-7})                              -- Top Center Of Player
+        c_proc(glVertex2d,{ 0, 7})                              -- Bottom Center Of Player
+    c_proc(glEnd,{})                                            -- Done Drawing The Player
+
+    for loop1= 1 to stage*level do                          -- Loop To Draw Enemies
+        c_proc(glLoadIdentity,{})                          -- Reset The Modelview Matrix
+        c_proc(glTranslatef,{enemy[loop1][fx]+20.0,enemy[loop1][fy]+70.0,0.0})
+        c_proc(glColor3f,{1.0,0.5,0.5})                     -- Make Enemy Body Pink
+        c_proc(glBegin,{GL_LINES})                         -- Start Drawing Enemy
+            c_proc(glVertex2d,{ 0,-7})                      -- Top Point Of Body
+            c_proc(glVertex2d,{-7, 0})                      -- Left Point Of Body
+            c_proc(glVertex2d,{-7, 0})                      -- Left Point Of Body
+            c_proc(glVertex2d,{ 0, 7})                      -- Bottom Point Of Body
+            c_proc(glVertex2d,{ 0, 7})                      -- Bottom Point Of Body
+            c_proc(glVertex2d,{ 7, 0})                      -- Right Point Of Body
+            c_proc(glVertex2d,{ 7, 0})                      -- Right Point Of Body
+            c_proc(glVertex2d,{ 0,-7})                      -- Top Point Of Body
+        c_proc(glEnd,{})                                    -- Done Drawing Enemy Body
+        c_proc(glRotatef,{enemy[loop1][spin],0.0,0.0,1.0})  -- Rotate The Enemy Blade
+        c_proc(glColor3f,{1.0,0.0,0.0})                     -- Make Enemy Blade Red
+        c_proc(glBegin,{GL_LINES})                          -- Start Drawing Enemy Blade
+            c_proc(glVertex2d,{-7,-7})                      -- Top Left Of Enemy
+            c_proc(glVertex2d,{ 7, 7})                      -- Bottom Right Of Enemy
+            c_proc(glVertex2d,{-7, 7})                      -- Bottom Left Of Enemy
+            c_proc(glVertex2d,{ 7,-7})                      -- Top Right Of Enemy
+        c_proc(glEnd,{})                                    -- Done Drawing Enemy Blade
+    end for
+
+    return TRUE
+end function
+
+integer dmScreenSettings, WindowRect
+
+procedure KillGLWindow()
+    if fullscreen then
+        if c_func(ChangeDisplaySettingsA,{NULL,0}) then end if
+        if c_func(ShowCursor,{TRUE}) then end if
+    end if
+    if hRC then
+        if c_func(wglMakeCurrent,{NULL,NULL}) then end if
+        if c_func(wglDeleteContext,{hRC}) then end if
+        hRC = NULL
+    end if
+    if hRC and not c_func(ReleaseDC,{hWnd,hDC}) then
+        hDC = NULL
+    end if
+    if hWnd and not c_func(DestroyWindow,{hWnd}) then
+        hWnd = NULL
+    end if
+    if dmScreenSettings then
+        free(dmScreenSettings)
+    end if
+    KillFont()
+    free(WindowRect)
+end procedure
+
+function WndProc(atom hWnd, integer uMsg, atom wParam, atom lParam)
+    if uMsg = WM_ACTIVATE then
+        if not floor(wParam/#10000) then
+            active = TRUE
+        else
+            active = FALSE
+        end if
+    elsif  uMsg = WM_SYSCOMMAND then
+        if wParam = SC_SCREENSAVE then end if
+        if wParam = SC_MONITORPOWER then end if
+    elsif uMsg = WM_CLOSE then
+        c_proc(PostQuitMessage,{0})
+    elsif uMsg = WM_KEYDOWN then
+        keys[wParam] = TRUE
+    elsif uMsg = WM_KEYUP then
+        keys[wParam] = FALSE
+    elsif uMsg = WM_SIZE then
+        ReSizeGLScene(and_bits(lParam,#FFFF),floor(lParam/#10000))
+    end if
+    return c_func(DefWindowProcA,{hWnd, uMsg, wParam, lParam})
+end function
+
+integer wc wc = allocate(40)
+function ClassRegistration()
+integer WndProcAddress, id
+    id = routine_id("WndProc")
+    if id = -1 then
+    puts(1, "routine_id failed!\n")
+    abort(1)
+    end if
+    WndProcAddress = call_back(id)
+    hInstance = c_func(GetModuleHandleA,{NULL})
+    ClassName = allocate_string("OpenGL")
+    poke4(wc,or_all({CS_HREDRAW, CS_VREDRAW, CS_OWNDC}))
+    poke4(wc+4,WndProcAddress)
+    poke4(wc+8,0)
+    poke4(wc+12,0)
+    poke4(wc+16,hInstance)
+    poke4(wc+20,c_func(LoadIconA,{NULL,IDI_WINLOGO}))
+    poke4(wc+24,c_func(LoadCursorA,{NULL, IDC_ARROW}))
+    poke4(wc+28,NULL)
+    poke4(wc+32,NULL)
+    poke4(wc+36,ClassName)
+    if not c_func(RegisterClassA,{wc}) then
+        retval = message_box("Failed to register class","Error", or_bits(MB_OK,MB_ICONINFORMATION))
+        return FALSE
+    else
+        return TRUE
+    end if
+end function
+
+integer regd regd = FALSE
+procedure CreateGLWindow(atom title, integer width, integer height, integer bits, integer fullscreenflag)
+    atom PixelFormat, pfd, dwExStyle, dwStyle
+    sequence s
+    if regd = FALSE then
+        if ClassRegistration() then
+            regd = TRUE
+        end if
+    end if
+    fullscreen = fullscreenflag
+    if fullscreen then
+        dmScreenSettings = allocate(156)
+        mem_set(dmScreenSettings,0,156)
+        s = int_to_bytes(156)
+        poke(dmScreenSettings + 36,{s[1],s[2]})
+        poke4(dmScreenSettings + 40,or_all({DM_BITSPERPEL,DM_PELSWIDTH,DM_PELSHEIGHT}))
+        poke4(dmScreenSettings + 104, bits)
+        poke4(dmScreenSettings + 108, width)
+        poke4(dmScreenSettings + 112, height)
+        if c_func(ChangeDisplaySettingsA,{dmScreenSettings,CDS_FULLSCREEN}) != DISP_CHANGE_SUCCESSFUL then
+            if message_box("The requested fullscreen mode is not supported by\nyour video card. " &
+                           "Use windowed mode instead?","Error", or_bits(MB_YESNO,MB_ICONEXCLAMATION)) = IDYES then
+            else
+                retval = message_box("Program will now close","Error",or_bits(MB_OK,MB_ICONSTOP))
+            end if
+        end if
+    else
+        dmScreenSettings = NULL
+    end if
+    if fullscreen then
+        dwExStyle = WS_EX_APPWINDOW
+        dwStyle = WS_POPUP
+        if c_func(ShowCursor,{FALSE}) then end if
+    else
+        dwExStyle = or_bits(WS_EX_APPWINDOW,WS_EX_WINDOWEDGE)
+        dwStyle = WS_OVERLAPPEDWINDOW
+    end if
+    WindowRect = allocate(16)
+    poke4(WindowRect,0)
+    poke4(WindowRect + 4,width)
+    poke4(WindowRect + 8, 0)
+    poke4(WindowRect + 12, height)
+    if c_func(AdjustWindowRectEx,{WindowRect, dwStyle, FALSE, dwExStyle}) then end if
+    hWnd = c_func(CreateWindowExA,{dwExStyle,  --extended window style
+                                   ClassName,  --class
+                                   title,      --window caption
+                                   or_all({WS_CLIPSIBLINGS,WS_CLIPCHILDREN,dwStyle}),  --window style
+                                   0,
+                                   0,
+                                   peek4u(WindowRect + 4) - peek4u(WindowRect),
+                                   peek4u(WindowRect + 12) - peek4u(WindowRect + 8),
+                                   NULL,
+                                   NULL,
+                                   hInstance,
+                                   NULL})
+    if hWnd = NULL then
+        KillGLWindow()
+        retval = message_box("Window creation error","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    pfd = allocate(40)  --PIXELFORMATDESCRIPTOR
+    mem_set(pfd,0,40)
+    poke(pfd, 40)  --size of pfd structure
+    poke(pfd + 2, 1) --version
+    poke4(pfd + 4, or_all({PFD_DRAW_TO_WINDOW,PFD_SUPPORT_OPENGL,PFD_DOUBLEBUFFER})) --properties flags
+    poke(pfd + 8, PFD_TYPE_RGBA)  --request an rgba format
+    poke(pfd + 9, 24)  --select color depth
+    poke(pfd + 23, 24)  --32bit Z-buffer
+
+    hDC = c_func(GetDC,{hWnd})  --create GL device context to match window device context
+    if not hDC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL device context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    PixelFormat = c_func(ChoosePixelFormat,{hDC,pfd})  --find a pixel format matching PIXELFORMATDESCRIPTOR
+    if not PixelFormat then
+        KillGLWindow()
+        retval = message_box("Can't find a suitable pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(SetPixelFormat,{hDC,PixelFormat,pfd})) then  --set the pixel format
+        KillGLWindow()
+        retval = message_box("Can't set the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not c_func(DescribePixelFormat, {hDC,PixelFormat,40,pfd}) then
+        retval = message_box("Can't describe the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    hRC = c_func(wglCreateContext,{hDC})  --create GL rendering context
+    if not hRC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(wglMakeCurrent,{hDC,hRC})) then  --make the GL rendering context active
+        KillGLWindow()
+        retval = message_box("Can't activate the GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    retval = c_func(ShowWindow,{hWnd,SW_SHOW}) --show the window
+    retval = c_func(SetForegroundWindow,{hWnd}) --set it to always be in foreground
+    retval = c_func(SetFocus,{hWnd}) --give it focus
+    ReSizeGLScene(width-27, height-29)  --draw the GL scene to match the window size
+    InitGL()  --initialize OpenGL
+end procedure
+
+integer MSG MSG = allocate(28)
+integer title title = allocate_string("OpenGL")
+procedure WinMain()
+atom start
+integer done, msg_message
+    done = FALSE
+    if message_box("Would you like to run in fullscreen mode?","Start Fullscreen?",or_bits(MB_YESNO,MB_ICONQUESTION)) = IDNO then
+        fullscreen = FALSE
+    else
+        fullscreen = TRUE
+    end if
+    CreateGLWindow(title,640,480,24,fullscreen)
+
+    ResetObjects()
+    TimerInit()
+
+    while not done do
+        if c_func(PeekMessageA,{MSG,NULL,0,0,PM_REMOVE}) then
+            msg_message = peek4u(MSG+4)
+            if msg_message = WM_QUIT then
+                done = TRUE
+            else
+                retval = c_func(TranslateMessage,{MSG})
+                retval = c_func(DispatchMessageA,{MSG})
+            end if
+        else
+            start = TimerGetTime()
+            if ((active and not DrawGLScene()) or keys[VK_ESCAPE]) then
+                done = TRUE
+            else
+                retval = c_func(SwapBuffers,{hDC})
+
+                while TimerGetTime() < start + steps[adjust] * 2 do end while
+
+                if keys[VK_F1] then
+                    keys[VK_F1] = FALSE
+                    KillGLWindow()
+                    if fullscreen = 0 then
+                        fullscreen = 1
+                    else
+                        fullscreen = 0
+                    end if
+                    CreateGLWindow(title,640,480,24,fullscreen)
+                end if
+                if keys['A'] and not ap then
+                    ap = TRUE
+                    if anti then
+                        anti = FALSE
+                    else
+                        anti = TRUE
+                    end if
+                end if
+                if not keys['A'] then
+                    ap = FALSE
+                end if
+                if not gameover and active then                     -- If Game Isn't Over And Programs Active Move Objects
+                    for loop1 = 1 to stage * level  do            -- Loop Through The Different Stages
+                        if enemy[loop1][x]<player[x] and enemy[loop1][fy]=enemy[loop1][y]*40 then
+                            enemy[loop1][x]+=1                      -- Move The Enemy Right
+                        end if
+                        if enemy[loop1][x]>player[x] and enemy[loop1][fy]=enemy[loop1][y]*40 then
+                            enemy[loop1][x]-=1                      -- Move The Enemy Left
+                        end if
+                        if enemy[loop1][y]<player[y] and enemy[loop1][fx]=enemy[loop1][x]*60 then
+                            enemy[loop1][y]+=1                       -- Move The Enemy Down
+                        end if
+                        if enemy[loop1][y]>player[y] and enemy[loop1][fx]=enemy[loop1][x]*60 then
+                            enemy[loop1][y]-=1                      -- Move The Enemy Up
+                        end if
+                        if delay>(3-level) and hourglass[fx]!=2 then -- If Our Delay Is Done And Player Doesn't Have Hourglass
+                            delay=0                                 -- Reset The Delay Counter Back To Zero
+                            for loop2=1 to stage * level + 1 do     -- Loop Through All The Enemies
+                                if enemy[loop2][fx]<enemy[loop2][x]*60  then -- Is Fine Position On X Axis Lower Than Intended Position?
+                                    enemy[loop2][fx]+=steps[adjust] -- If So, Increase Fine Position On X Axis
+                                    enemy[loop2][spin]+=steps[adjust]   -- Spin Enemy Clockwise
+                                end if
+                                if enemy[loop2][fx]>enemy[loop2][x]*60  then -- Is Fine Position On X Axis Higher Than Intended Position?
+                                    enemy[loop2][fx]-=steps[adjust]     -- If So, Decrease Fine Position On X Axis
+                                    enemy[loop2][spin]-=steps[adjust]   -- Spin Enemy Counter Clockwise
+                                end if
+                                if enemy[loop2][fy]<enemy[loop2][y]*40 then -- Is Fine Position On Y Axis Lower Than Intended Position?
+                                    enemy[loop2][fy]+=steps[adjust]     -- If So, Increase Fine Position On Y Axis
+                                    enemy[loop2][spin]+=steps[adjust]   -- Spin Enemy Clockwise
+                                end if
+                                if enemy[loop2][fy]>enemy[loop2][y]*40 then -- Is Fine Position On Y Axis Higher Than Intended Position?
+                                    enemy[loop2][fy]-=steps[adjust]     -- If So, Decrease Fine Position On Y Axis
+                                    enemy[loop2][spin]-=steps[adjust]   -- Spin Enemy Counter Clockwise
+                                end if
+                            end for
+                        end if
+                    --  Are Any Of The Enemies On Top Of The Player?
+                        if enemy[loop1][fx]=player[fx] and enemy[loop1][fy]=player[fy] then
+                            lives-=1                                    -- If So, Player Loses A Life
+                            if lives=0 then                             -- Are We Out Of Lives?
+                                gameover=TRUE                           -- If So, gameover Becomes TRUE
+                            end if
+                            ResetObjects()                              -- Reset Player / Enemy Positions
+                            retval = c_func(PlaySound,{ddv, NULL, SND_SYNC})   -- Play The Death Sound
+                        end if
+                    end for
+
+                    if keys[VK_RIGHT] and player[x]<9 and player[fx]=player[x]*60 and player[fy]=player[y]*40 then
+                        hline[player[x]+1][player[y]+1]=TRUE                -- Mark The Current Horizontal Border As Filled
+                        player[x]+=1                                    -- Move The Player Right
+                    end if
+                    if keys[VK_LEFT] and player[x]>0 and player[fx]=player[x]*60 and player[fy]=player[y]*40 then
+                        player[x]-=1                                     -- Move The Player Left
+                        hline[player[x]+1][player[y]+1]=TRUE                -- Mark The Current Horizontal Border As Filled
+                    end if
+                    if keys[VK_DOWN] and player[y]<9 and player[fx]=player[x]*60 and player[fy]=player[y]*40 then
+                        vline[player[x]+1][player[y]+1]=TRUE                -- Mark The Current Verticle Border As Filled
+                        player[y]+=1                                    -- Move The Player Down
+                    end if
+                    if keys[VK_UP] and player[y]>0 and player[fx]=player[x]*60 and player[fy]=player[y]*40 then
+                        player[y]-=1                                    -- Move The Player Up
+                        vline[player[x]+1][player[y]+1]=TRUE                -- Mark The Current Verticle Border As Filled
+                    end if
+
+                    if player[fx]<player[x]*60 then                     -- Is Fine Position On X Axis Lower Than Intended Position?
+                        player[fx]+=steps[adjust]                       -- If So, Increase The Fine X Position
+                    end if
+                    if player[fx]>player[x]*60  then                    -- Is Fine Position On X Axis Greater Than Intended Position?
+                        player[fx]-=steps[adjust]                       -- If So, Decrease The Fine X Position
+                    end if
+                    if player[fy]<player[y]*40 then                     -- Is Fine Position On Y Axis Lower Than Intended Position?
+                        player[fy]+=steps[adjust]                       -- If So, Increase The Fine Y Position
+                    end if
+                    if player[fy]>player[y]*40 then                     -- Is Fine Position On Y Axis Lower Than Intended Position?
+                        player[fy]-=steps[adjust]                       -- If So, Decrease The Fine Y Position
+                    end if
+                else                                                    -- Otherwise
+                    if keys[' '] then                                   -- If Spacebar Is Being Pressed
+                        gameover=FALSE                                  -- gameover Becomes FALSE
+                        filled=TRUE                                     -- filled Becomes TRUE
+                        level=1                                         -- Starting Level Is Set Back To One
+                        level2=1                                        -- Displayed Level Is Also Set To One
+                        stage=0                                         -- Game Stage Is Set To Zero
+                        lives=5                                         -- Lives Is Set To Five
+                    end if
+                end if
+
+                if filled then                                          -- Is The Grid Filled In?
+                    retval = c_func(PlaySound,{dcv, NULL, SND_SYNC})    -- If So, Play The Level Complete Sound
+                    stage+=1                                            -- Increase The Stage
+                    if stage>3  then                                    -- Is The Stage Higher Than 3?
+                        stage=1                                         -- If So, Set The Stage To One
+                        level+=1                                        -- Increase The Level
+                        level2+=1                                       -- Increase The Displayed Level
+                        if level>3 then                                 -- Is The Level Greater Than 3?
+                            level=3                                     -- If So, Set The Level To 3
+                            lives+=1                                    -- Give The Player A Free Life
+                            if lives>5 then                             -- Does The Player Have More Than 5 Lives?
+                                lives=5                                 -- If So, Set Lives To Five
+                            end if
+                        end if
+                    end if
+
+                    ResetObjects()                                      -- Reset Player / Enemy Positions
+
+                    for loop1=1 to 10 do                                -- Loop Through The Grid X Coordinates
+                        for loop2=1 to 10 do                            -- Loop Through The Grid Y Coordinates
+                            if loop1<10 then                            -- If X Coordinate Is Less Than 10
+                                hline[loop1][loop2]=FALSE               -- Set The Current Horizontal Value To FALSE
+                            end if
+                            if loop2<10 then                            -- If Y Coordinate Is Less Than 10
+                                vline[loop1][loop2]=FALSE               -- Set The Current Vertical Value To FALSE
+                            end if
+                        end for
+                    end for
+                end if
+
+            -- If The Player Hits The Hourglass While It's Being Displayed On The Screen
+                if player[fx]=hourglass[x]*60 and player[fy]=hourglass[y]*40 and hourglass[fx]=1 then
+                    -- Play Freeze Enemy Sound
+                    retval = c_func(PlaySound,{dfv, NULL, or_bits(SND_ASYNC,SND_LOOP)})
+                    hourglass[fx]=2                                     -- Set The hourglass fx Variable To Two
+                    hourglass[fy]=0                                     -- Set The hourglass fy Variable To Zero
+                end if
+
+                player[spin]+=0.5*steps[adjust]                         -- Spin The Player Clockwise
+                if player[spin]>360.0 then                              -- Is The spin Value Greater Than 360?
+                    player[spin]-=360                                   -- If So, Subtract 360
+                end if
+
+                hourglass[spin]-=0.25*steps[adjust]                     -- Spin The Hourglass Counter Clockwise
+                if hourglass[spin]<0.0 then                             -- Is The spin Value Less Than 0?
+                    hourglass[spin]+=360.0                              -- If So, Add 360
+                end if
+
+                hourglass[fy]+=steps[adjust]                            -- Increase The hourglass fy Variable
+                if hourglass[fx]=0 and hourglass[fy]>6000/level then    -- Is The hourglass fx Variable Equal To 0 And The fy
+                                                                        -- Variable Greater Than 6000 Divided By The Current Level?
+                    retval = c_func(PlaySound,{dhv, NULL, SND_ASYNC})   -- If So, Play The Hourglass Appears Sound
+                    hourglass[x]=rand(10)                               -- Give The Hourglass A Random X Value
+                    hourglass[y]=rand(11)                               -- Give The Hourglass A Random Y Value
+                    hourglass[fx]=1                                     -- Set hourglass fx Variable To One (Hourglass Stage)
+                    hourglass[fy]=0                                     -- Set hourglass fy Variable To Zero (Counter)
+                end if
+
+                if hourglass[fx]=1 and hourglass[fy]>6000/level then    -- Is The hourglass fx Variable Equal To 1 And The fy
+                                                                        -- Variable Greater Than 6000 Divided By The Current Level?
+                    hourglass[fx]=0                                    -- If So, Set fx To Zero (Hourglass Will Vanish)
+                    hourglass[fy]=0                                      -- Set fy to Zero (Counter Is Reset)
+                end if
+
+                if hourglass[fx]=2 and hourglass[fy]>500+(500*level) then -- Is The hourglass fx Variable Equal To 2 And The fy
+                                                                        -- Variable Greater Than 500 Plus 500 Times The Current Level?
+                    retval = c_func(PlaySound,{NULL, NULL, 0})                                -- If So, Kill The Freeze Sound
+                    hourglass[fx]=0                                     -- Set hourglass fx Variable To Zero
+                    hourglass[fy]=0                                     -- Set hourglass fy Variable To Zero
+                end if
+
+            delay+=1                                                    -- Increase The Enemy Delay Counter
+            end if
+        end if
+    end while
+    KillGLWindow()
+end procedure
+
+WinMain()

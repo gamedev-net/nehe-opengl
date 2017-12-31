@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Created-By: NetBeans IDE
+Specified-By: Bitmap_Fonts/Lesson13.jarContent
+Main-Class: Bitmap_Fonts/Lesson13
+

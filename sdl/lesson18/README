@@ -1,0 +1,20 @@
+NeHe's Lesson 18
+
+SDL port
+
+WHAT YOU NEED
+-------------
+SDL (www.libsdl.org)
+Some kinda OpenGL implementation ( i.e., NVIDIA_GLX, MesaGL, etc...)
+
+BUILDING
+--------
+Well, building it really isn't that hard...make sure the include path
+is set correctly for SDL ( I include it as "SDL/SDL.h", so... ) and
+just build as follows:
+
+cc lesson18.c -o lesson18 -lSDL -lpthread -lGL -lGLU
+
+NOTE: To compile for Windows, you must #define WIN32
+
+That's it.  Enjoy.

@@ -1,0 +1,25 @@
+NeHe's Lesson 16
+
+SDL port
+
+There's a comment at the beginning of the code with some notes.
+BTW, Crate.bmp was converted to a 24-bit BMP, because I didn't feel
+like dealing with a color indexed picture ( Hey, at least i didn't
+totally change to a RAW file :> ).
+
+WHAT YOU NEED
+-------------
+SDL (www.libsdl.org)
+Some kinda OpenGL implementation ( i.e., NVIDIA_GLX, MesaGL, etc...)
+
+BUILDING
+--------
+Well, building it really isn't that hard...make sure the include path
+is set correctly for SDL ( I include it as "SDL/SDL.h", so... ) and
+just build as follows:
+
+cc lesson16.c -o lesson16 -lSDL -lpthread -lGL -lGLU
+
+NOTE: To compile for Windows, you must #define WIN32
+
+That's it.  Enjoy.

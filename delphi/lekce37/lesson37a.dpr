@@ -1,0 +1,447 @@
+program lesson37a;
+
+{   kÛd pro Delphi 7}
+
+uses
+  Windows,
+  SysUtils,
+  Messages,
+  OpenGL,
+  NeHeGL in 'NeHeGL.pas';
+
+procedure glGenTextures(n: GLsizei; var textures: GLuint); stdcall; external opengl32;
+procedure glBindTexture(target: GLenum; texture: GLuint); stdcall; external opengl32;
+procedure glDeleteTextures(n: GLsizei; textures: PGLuint); stdcall; external 'opengl32';
+
+type
+  MATRIX = record                                           // Ukl·d· OpenGL matici
+    Data: array [0..15] of GLfloat;                         // Matice ve form·tu OpenGL
+    end;
+
+  VECTOR = record                                           // Struktura vektoru
+    X, Y, Z: GLfloat;                                       // Sloûky vektoru
+    end;
+
+  VERTEX = record                                           // Struktura vertexu
+    Nor: VECTOR;                                            // Norm·la vertexu
+    Pos: VECTOR;                                            // Pozice vertexu
+    end;
+
+  POLYGON = record                                          // Struktura polygonu
+    Verts: array [0..2] of VERTEX;                          // Pole t¯Ì vertex˘
+    end;
+
+var
+  g_window: PGL_Window;                                     // Okno
+  g_keys: PKeys;                                            // Kl·vesy
+  outlineDraw: boolean = true;                              // Flag pro vykreslov·nÌ obrysu
+  outlineSmooth: boolean = false;                           // Flag pro vyhlazov·nÌ Ëar
+  outlineColor: array [0..2] of GLfloat = (0.0,0.0,0.0);    // Barva Ëar
+  outlineWidth: GLfloat = 3.0;                              // Tlouöùka Ëar
+  lightAngle: VECTOR;                                       // SmÏr svÏtla
+  lightRotate: boolean = false;                             // Flag oznamujÌcÌ zda rotujeme svÏtlem
+  modelAngle: GLfloat = 0.0;                                // ⁄hel natoËenÌ objektu na ose y
+  modelRotate: boolean = false;                             // Flag na ot·ËenÌ modelem
+  polyData: array of POLYGON;                               // Data polygon˘
+  polyNum: integer = 0;                                     // PoËet polygon˘
+  shaderTexture: GLuint;                                    // MÌsto pro jednu texturu
+
+
+function ReadMesh: boolean;                                                     // NaËte obsah souboru model.txt
+var
+  vstup: file;
+  precteno: integer;
+begin
+  AssignFile(vstup,'Data\model.txt');
+  {$I-}
+  Reset(vstup,1);                                                               // Otev¯e soubor
+  {$I+}
+  if IOResult <> 0 then                                                         // Kontrola chyby otev¯enÌ
+    begin
+    Result := false;
+    exit;
+    end;
+  BlockRead(vstup,polyNum,sizeof(integer),precteno);                            // NaËte hlaviËku souboru (poËet vertex˘)
+  SetLength(polyData,polyNum);                                                  // Alokace pamÏti
+  BlockRead(vstup,polyData[0],polyNum * sizeof(POLYGON),precteno);              // NaËte vöechna data
+  CloseFile(vstup);                                                             // Zav¯e soubor
+  Result := true;                                                               // Loading objektu ˙spÏön˝
+end;
+
+function DotProduct(V1, V2: VECTOR): GLfloat;                                   // SpoËÌt· odchylku dvou vektor˘
+begin
+  Result := V1.X * V2.X + V1.Y * V2.Y + V1.Z * V2.Z;                            // Vr·tÌ ˙hel
+end;
+
+function Magnitude(V: VECTOR): GLfloat;                                         // SpoËÌt· dÈlku vektoru
+begin
+  Result := sqrt(sqr(V.X) + sqr(V.Y) + sqr(V.Z));                               // Vr·tÌ dÈlku vektoru
+end;
+
+procedure Normalize(var V: VECTOR);                                             // Vytvo¯Ì jednotkov˝ vektor
+var
+  M: GLfloat;                                                                   // DÈlka vektoru
+begin
+  M := Magnitude(V);                                                            // SpoËÌt· aktu·lnÌ dÈlku vektoru
+  if M <> 0 then                                                                // Proti dÏlenÌ nulou
+    begin
+    V.X := V.X / M;                                                             // Normalizov·nÌ jednotliv˝ch sloûek
+    V.Y := V.Y / M;
+    V.Z := V.Z / M;
+    end;
+end;
+
+procedure RotateVector(M: MATRIX; V: VECTOR; var D: VECTOR);                    // Rotace vektoru podle zadanÈ matice
+begin
+  D.X := (M.Data[0] * V.X) + (M.Data[4] * V.Y) + (M.Data[8] * V.Z);             // OtoËenÌ na x
+  D.Y := (M.Data[1] * V.X) + (M.Data[5] * V.Y) + (M.Data[9] * V.Z);             // OtoËenÌ na y
+  D.Z := (M.Data[2] * V.X) + (M.Data[6] * V.Y) + (M.Data[10] * V.Z);            // OtoËenÌ na z
+end;
+
+function Initialize(window: PGL_Window; key: PKeys): boolean;	                  // Inicializace OpenGL
+var
+  i: integer;                                                                   // ÿÌdÌcÌ promÏnn· cykl˘
+  line: string;                                                                 // Pole znak˘
+  shaderData: array [0..31,0..2] of GLfloat;                                    // Pole 96 shader hodnot
+  vstup: Textfile;                                                              // Ukazatel na soubor
+begin
+  g_window := window;
+  g_keys := key;
+  glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);                             // PerspektivnÌ korekce
+  glClearColor(0.7,0.7,0.7,0.0);                                                // SvÏtle öedÈ pozadÌ
+  glClearDepth(1.0);                                                            // NastavenÌ hloubkovÈho bufferu
+  glEnable(GL_DEPTH_TEST);			                                                // PovolÌ hloubkovÈ testov·nÌ
+  glDepthFunc(GL_LESS);                                                         // Typ testov·nÌ hloubky
+  glShadeModel(GL_SMOOTH);                                                      // JemnÈ stÌnov·nÌ
+  glDisable(GL_LINE_SMOOTH);                                                    // Vypne vyhlazov·nÌ Ëar
+  glEnable(GL_CULL_FACE);                                                       // Zapne face culling (o¯ez·v·nÌ stÏn)
+  glDisable(GL_LIGHTING);                                                       // Vypne svÏtla
+  AssignFile(vstup,'Data\shader.txt');
+  {$I-}
+  Reset(vstup);                                                                 // Otev¯enÌ shader souboru
+  {$I+}
+  if IOResult = 0 then                                                          // Kontrola, zda je soubor otev¯en
+    begin
+    for i := 0 to 31 do                                                         // Projde vöech 32 hodnot ve stupnÌch öedi
+      begin
+      if Eof(vstup) then break;                                                 // Kontrola konce souboru
+      Readln(vstup,line);                                                       // ZÌsk·nÌ aktu·lnÌho ¯·dku
+      shaderData[i,0] := StrToFloat(line);                                      // ZkopÌruje danou hodnotu do vöech sloûek barvy
+      shaderData[i,1] := shaderData[i,0];
+      shaderData[i,2] := shaderData[i,0];
+      end;
+    CloseFile(vstup);                                                           // Zav¯e soubor
+    end
+    else
+    begin
+    Result := false;                                                            // Ne˙spÏch
+    exit;
+    end;
+  glGenTextures(1,shaderTexture);                                               // ZÌsk·nÌ ID textury
+  glBindTexture(GL_TEXTURE_1D,shaderTexture);                                   // P¯i¯azenÌ textury; od teÔ je 1D texturou
+  // Nikdy nepouûÌvejte bi-/trilinearnÌ filtrov·nÌ!
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+  glTexImage1D(GL_TEXTURE_1D,0,GL_RGB,32,0,GL_RGB,GL_FLOAT,@shaderData);        // Upload dat
+  lightAngle.X := 0.0;                                                          // NastavenÌ smÏru x
+  lightAngle.Y := 0.0;                                                          // NastavenÌ smÏru y
+  lightAngle.Z := 1.0;                                                          // NastavenÌ smÏru z
+  Normalize(lightAngle);                                                        // Normalizov·nÌ vektoru svÏtla
+  Result := ReadMesh;                                                           // Vr·tÌ n·vratovou hodnotu funkce ReadMesh()
+end;
+
+procedure Deinitialize;                                                         // Deinicializace
+begin
+  glDeleteTextures(1,@shaderTexture);                                           // Smaûe shader texturu
+  SetLength(polyData,0);                                                        // UvolnÌ data polygon˘
+end;
+
+procedure Update(milliseconds: DWORD);                                // Aktualizace pohyb˘ ve scÈnÏ a stisk kl·ves
+begin
+  if g_keys.keyDown[VK_ESCAPE] then                                   // Kl·vesa ESC?
+    TerminateApplication(g_window^);                                  // UkonËenÌ programu
+  if g_keys.keyDown[VK_F1] then                                       // Kl·vesa F1?
+    ToggleFullscreen(g_window^);                                      // P¯epnutÌ fullscreen/okno
+  if g_keys.keyDown[Ord(' ')] then                                    // MezernÌk
+    begin
+    modelRotate := not modelRotate;                                   // Zapne/vypne rotaci objektu
+    g_keys.keyDown[Ord(' ')] := FALSE;
+    end;
+  if g_keys.keyDown [Ord('1')] then                                   // Kl·vesa ËÌsla 1
+    begin
+    outlineDraw := not outlineDraw;                                   // Zapne/vypne vykreslov·nÌ obrysu
+    g_keys.keyDown[Ord('1')] := FALSE;
+    end;
+  if g_keys.keyDown[Ord('2')] then                                    // Kl·vesa ËÌslo 2
+    begin
+    outlineSmooth := not outlineSmooth;                               // Zapne/vypne anti-aliasing
+    g_keys.keyDown[Ord('2')] := FALSE;
+    end;
+  if g_keys.keyDown[VK_UP] then                                       // äipka nahoru
+    begin
+    outlineWidth := outlineWidth + 1.0;                               // ZvÏtöÌ tlouöùku Ë·ry
+    g_keys.keyDown[VK_UP] := FALSE;
+    end;
+  if g_keys.keyDown[VK_DOWN] then                                     // äipka dol˘
+    begin
+    outlineWidth := outlineWidth - 1.0;                               // ZmenöÌ tlouöùku Ë·ry
+    g_keys.keyDown[VK_DOWN] := FALSE;
+    end;
+  if modelRotate then                                                 // Je rotace zapnut·
+    modelAngle := modelAngle + milliseconds / 10.0;                   // Aktualizace ˙hlu natoËenÌ v z·vislosti na FPS
+end;
+
+procedure Draw;                                                       // VykreslenÌ scÈny
+var
+  i, j: integer;                                                      // ÿÌdÌcÌ promÏnnÈ cykl˘
+  TmpShade: GLfloat;                                                  // DoËasn· hodnota stÌnu
+  TmpMatrix: MATRIX;                                                  // DoËasn· MATRIX struktura
+  TmpVector, TmpNormal: VECTOR;                                       // DoËasnÈ VECTOR struktury
+begin
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);                // Smaûe obrazovku a hloubkov˝ buffer
+  glLoadIdentity;	                                                    // Reset matice
+  if outlineSmooth then                                               // Chce uûivatel vyhlazenÈ Ë·ry?
+    begin
+    glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);                            // Pouûije nejkvalitnÏjöÌ v˝poËty
+    glEnable(GL_LINE_SMOOTH);                                         // Zapne anti-aliasing
+    end
+    else
+    glDisable(GL_LINE_SMOOTH);                                        // Vypne anti-aliasing
+  glTranslatef(0.0,0.0,-2.0);                                         // Posun do hloubky
+  glRotatef(modelAngle,0.0,1.0,0.0);                                  // Rotace objektem na ose y
+  glGetFloatv(GL_MODELVIEW_MATRIX,@TmpMatrix.Data);                   // ZÌsk·nÌ matice
+  // KÛd Cel-Shadingu
+  glEnable(GL_TEXTURE_1D);                                            // Zapne 1D texturov·nÌ
+  glBindTexture(GL_TEXTURE_1D,shaderTexture);                         // ZvolÌ texturu
+  glColor3f(1.0,1.0,1.0);                                             // NastavenÌ barvy modelu (bÌl·)
+  glBegin(GL_TRIANGLES);                                              // ZaË·tek kreslenÌ troj˙helnÌk˘
+    for i := 0 to polyNum - 1 do                                      // Proch·zÌ jednotlivÈ polygony
+      for j := 0 to 2 do                                              // Proch·zÌ jednotlivÈ vertexy
+        begin
+        // ZkopÌrov·nÌ aktu·lnÌ norm·ly do doËasnÈ struktury
+        TmpNormal.X := polyData[i].Verts[j].Nor.X;
+        TmpNormal.Y := polyData[i].Verts[j].Nor.Y;
+        TmpNormal.Z := polyData[i].Verts[j].Nor.Z;
+        RotateVector(TmpMatrix,TmpNormal,TmpVector);                  // OtoËÌ vektor podle matice
+        Normalize(TmpVector);                                         // Normalizace norm·ly
+        TmpShade := DotProduct(TmpVector,lightAngle);                 // SpoËÌt·nÌ hodnoty stÌnu
+        if TmpShade < 0.0 then TmpShade := 0.0;                       // Pokud je TmpShade menöÌ neû nula bude se rovnat nule
+        glTexCoord1f(TmpShade);                                       // NastavenÌ texturovacÌ sou¯adnice na hodnotu stÌnu
+        glVertex3fv(@polyData[i].Verts[j].Pos.X);                     // Poöle pozici vertexu
+        end;
+  glEnd;                                                              // Konec kreslenÌ
+  glDisable(GL_TEXTURE_1D);                                           // Vypne 1D texturov·nÌ
+  // KÛd pro vykreslenÌ obrys˘
+  if outlineDraw then                                                 // Chceme v˘bec kreslit obrys?
+    begin
+    glEnable(GL_BLEND);                                               // Zapne blending
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);                 // MÛd blendingu
+    glPolygonMode(GL_BACK,GL_LINE);                                   // Odvr·cenÈ polygony se stanout pouze obrysov˝mi Ëarami
+    glLineWidth(outlineWidth);                                        // NastavenÌ öÌ¯ky Ë·ry
+    glCullFace(GL_FRONT);                                             // Nerenderovat p¯ivr·cenÈ polygony
+    glDepthFunc(GL_LEQUAL);                                           // MÛd testov·nÌ hloubky
+    glColor3fv(@outlineColor[0]);                                     // Barva obrysu (Ëern·)
+    glBegin(GL_TRIANGLES);                                            // ZaË·tek kreslenÌ troj˙helnÌk˘
+      for i := 0 to polyNum - 1 do                                    // Proch·zÌ jednotlivÈ polygony
+        for j := 0 to 2 do                                            // Proch·zÌ jednotlivÈ vertexy
+          glVertex3fv(@polyData[i].Verts[j].Pos.X);                   // Poöle pozici vertexu
+    glEnd;                                                            // Konec kreslenÌ
+    glDepthFunc(GL_LESS);                                             // Testov·nÌ hloubky na p˘vodnÌ nastavenÌ
+    glCullFace(GL_BACK);                                              // NastavenÌ o¯ez·v·nÌ na p˘vodnÌ hodnotu
+    glPolygonMode(GL_BACK,GL_FILL);                                   // Norm·lnÌ vykreslov·nÌ
+    glDisable(GL_BLEND);                                              // Vypne blending
+    end;
+	glFlush;                                                            // Vypr·zdnÌ OpenGL renderovacÌ pipeline
+end;
+
+function WindowProc(hWnd: HWND;                                       // Handle okna
+                 uMsg: UINT;                                          // Zpr·va pro okno
+                 wParam: WPARAM;                                      // DoplÚkovÈ informace
+                 lParam: LPARAM):                                     // DoplÚkovÈ informace
+                                  LRESULT; stdcall;
+var
+  window: ^GL_Window;
+  creation: ^CREATESTRUCT;
+begin
+  if uMsg = WM_SYSCOMMAND then                                        // SystÈmov˝ p¯Ìkaz
+      case wParam of                                                  // Typ systÈmovÈho p¯Ìkazu
+        SC_SCREENSAVE,SC_MONITORPOWER:                                // Pokus o zapnutÌ öet¯iËe obrazovky, Pokus o p¯echod do ˙spornÈho reûimu?
+          begin
+            Result := 0;                                              // Zabr·nÌ obojÌmu
+            exit;
+          end;
+      end;
+  window := Pointer(GetWindowLong(hWnd,GWL_USERDATA));
+  case uMsg of                                                        // VÏtvenÌ podle p¯ÌchozÌ zpr·vy
+    WM_CREATE:
+      begin
+      creation := Pointer(lParam);
+      window := Pointer(creation.lpCreateParams);
+      SetWindowLong(hWnd,GWL_USERDATA,Integer(window));
+      Result := 0;
+      end;
+    WM_CLOSE:                                                         // Povel k ukonËenÌ programu
+      begin
+      TerminateApplication(window^);                                  // Poöle zpr·vu o ukonËenÌ
+      Result := 0                                                     // N·vrat do hlavnÌho cyklu programu
+      end;
+    WM_SIZE:                                                          // ZmÏna velikosti okna
+      begin
+      case wParam of
+        SIZE_MINIMIZED:
+          begin
+          window.isVisible := false;
+          Result := 0;
+          end;
+        SIZE_MAXIMIZED,
+        SIZE_RESTORED:
+          begin
+          window.isVisible := true;
+          ReshapeGL(LOWORD(lParam),HIWORD(lParam));                 // LoWord=äÌ¯ka, HiWord=V˝öka
+          Result := 0;                                              // N·vrat do hlavnÌho cyklu programu
+          end;
+      end;
+     // Result := 0;
+      end;
+    WM_KEYDOWN:                                                     // Stisk kl·vesy
+      begin
+      if (wParam >= 0) and (wParam <= 255) then
+        begin
+        window^.keys^.keyDown[wParam] := true;                      // Ozn·mÌ to programu
+        Result := 0;
+        end;
+      //Result := 0;                                                // N·vrat do hlavnÌho cyklu programu
+      end;
+    WM_KEYUP:                                                       // UvolnÏnÌ kl·vesy
+      begin
+      if (wParam >= 0) and (wParam <= 255) then
+        begin
+    	  window^.keys^.keyDown[wParam] := false;                     // Ozn·mÌ to programu
+        Result := 0;                                                // N·vrat do hlavnÌho cyklu programu
+        end;
+      //exit;
+      end;
+    WM_TOGGLEFULLSCREEN:
+      begin
+      g_createFullScreen := not g_createFullScreen;
+      PostMessage(hWnd,WM_QUIT,0,0);
+      Result := 0;
+      end;
+    else
+      // P¯ed·nÌ ostatnÌch zpr·v systÈmu
+      begin
+      	Result := DefWindowProc(hWnd,uMsg,wParam,lParam);
+      end;
+    end;
+end;
+
+function RegisterWindowClass(application: Application): boolean;
+var
+  windowClass: WNDCLASSEX;
+begin
+  ZeroMemory(@windowClass,Sizeof(windowClass));
+  with windowClass do
+    begin
+    cbSize := Sizeof(windowClass);
+    style := CS_HREDRAW or CS_VREDRAW or CS_OWNDC;                  // P¯ekreslenÌ p¯i zmÏnÏ velikosti a vlastnÌ DC
+    lpfnWndProc := @WindowProc;                                     // Definuje proceduru okna
+    hInstance := application.hInstance;                             // Instance
+    hbrBackground := COLOR_APPWORKSPACE;                            // PozadÌ nenÌ nutnÈ
+    hCursor := LoadCursor(0,IDC_ARROW);                             // StandardnÌ kurzor myöi
+    lpszClassName := PChar(application.className);                  // JmÈno t¯Ìdy okna
+    end;
+  if RegisterClassEx(windowClass) = 0 then                          // Registruje t¯Ìdu okna
+    begin
+    MessageBox(HWND_DESKTOP,'RegisterClassEx Failed!','Error',MB_OK or MB_ICONEXCLAMATION);
+    Result := false;                                                // P¯i chybÏ vr·tÌ false
+    exit;
+    end;
+  Result := true;
+end;
+
+function WinMain(hInstance: HINST;                                  // Instance
+		 hPrevInstance: HINST;                                          // P¯edchozÌ instance
+		 lpCmdLine: PChar;                                              // Parametry p¯ÌkazovÈ ¯·dky
+		 nCmdShow: integer):                                            // Stav zobrazenÌ okna
+                        integer; stdcall;
+var
+  app: Application;
+  window: GL_Window;
+  key: Keys;
+  isMessagePumpActive: boolean;
+  msg: TMsg;                                                        // Struktura zpr·v systÈmu
+  tickCount: DWORD;
+begin
+  app.className := 'OpenGL';
+  app.hInstance := hInstance;
+  ZeroMemory(@window,Sizeof(window));
+  with window do
+    begin
+    keys := @key;
+    init.application := @app;
+    init.title := 'NeHe''s Cel-Shading Tutorial';
+    init.width := 640;
+    init.height := 480;
+    init.bitsPerPixel := 16;
+    init.isFullScreen := true;
+    end;
+  ZeroMemory(@key,Sizeof(key));
+  // Dotaz na uûivatele pro fullscreen/okno
+  if MessageBox(HWND_DESKTOP,'Would You Like To Run In FullScreen Mode?','Start FullScreen',
+                MB_YESNO or MB_ICONQUESTION) = IDNO then
+    window.init.isFullScreen := false;                                 // BÏh v oknÏ
+  if not RegisterWindowClass(app) then
+    begin
+    MessageBox(HWND_DESKTOP,'Error Registering Window Class!','Error',MB_OK or MB_ICONEXCLAMATION);
+    Result := -1;
+    exit;
+    end;
+  g_isProgramLooping := true;
+  g_createFullScreen := window.init.isFullScreen;
+  while g_isProgramLooping do
+    begin
+    window.init.isFullScreen := g_createFullScreen;
+    if CreateWindowGL(window) then
+      begin
+      if not Initialize(@window,@key) then
+        TerminateApplication(window)
+        else
+        begin
+        isMessagePumpActive := true;
+        while isMessagePumpActive do
+          if PeekMessage(msg,0,0,0,PM_REMOVE) then                  // P¯iöla zpr·va?
+            if msg.message <> WM_QUIT then                          // Obdrûeli jsme zpr·vu pro ukonËenÌ?
+              DispatchMessage(msg)                                
+              else
+              isMessagePumpActive := false                          // Konec programu
+            else
+            if not window.isVisible then
+              WaitMessage
+              else
+              begin
+              tickCount := GetTickCount;
+              Update(tickCount - window.lastTickCount);
+              window.lastTickCount := tickCount;
+              Draw;
+              SwapBuffers(window.hDc);
+              end;
+        end;
+      Deinitialize;
+      DestroyWindowGL(window);
+      end
+      else
+      begin
+      MessageBox(HWND_DESKTOP,'Error Creating OpenGL Window','Error',MB_OK or MB_ICONEXCLAMATION);
+      g_isProgramLooping := false;
+      end;
+    end;
+  UnregisterClass(PChar(app.className),app.hInstance);
+  Result := 0;
+end;
+
+begin
+  DecimalSeparator := '.';
+  WinMain( hInstance, hPrevInst, CmdLine, CmdShow );                  // Start programu
+  DecimalSeparator := ',';
+end.
+

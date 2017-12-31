@@ -1,0 +1,17 @@
+CHANGES
+-------
+
+Obviously, there is going to be some changes when a port is done.
+Of course, all Windows crap was deleted (FIRST), and then I threw in the SDL
+stuff real quick.  Basically, most of the code (at least the controls and
+the GL code) went untouched.
+
+You'll notice that Data/Particle.bmp (from the original demo) is now
+Particle.raw.  Sure sign of laziness on my part.  I didn't feel like writing
+a BMP loader (to replace the one from GLaux) so I converted it to a raw file
+with gimp.  Same pic though.
+
+Oh yeah, and if one were to, say, have SDL for Windows, this WOULD (apparently) compile without
+needing ANY changes whatsoever.
+
+I like portable code.  It's fun.

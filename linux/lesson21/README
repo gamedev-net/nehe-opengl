@@ -1,0 +1,19 @@
+Welcome into this file :)
+
+This here is the port of NeHe's Lesson 21 to Linux/SDL
+It should also work in Beos, Windoze and MacOS
+If you're interested in running it on these platforms, go to
+
+http://www.libsdl.org/Xmingw32/index.html
+
+This port also has one improvement over the original version:
+Background music!
+
+The music was created by the Lizard King
+His webpage can be found at http://www.itv.se/~a1055/
+
+
+
+marius
+marius@hot.ee
+http://fr.ee/linux

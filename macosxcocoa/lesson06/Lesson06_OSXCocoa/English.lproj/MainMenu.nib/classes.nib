@@ -1,0 +1,13 @@
+{
+    IBClasses = (
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
+        {
+            ACTIONS = {setFullScreen = id; }; 
+            CLASS = Lesson06Controller; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {glWindow = id; }; 
+            SUPERCLASS = NSResponder; 
+        }
+    ); 
+    IBVersion = 1; 
+}

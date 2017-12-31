@@ -1,0 +1,1 @@
+javaw -Xrunhprof:cpu=samples,file=log.txt -Djava.library.path=%LWJGL_HOME% Lesson11 %1

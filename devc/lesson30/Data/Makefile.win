@@ -1,0 +1,41 @@
+# Project: Lesson30
+# Makefile created by Dev-C++ 4.9.8.0
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = Image.o Lesson30.o Tmatrix.o Tray.o Tvector.o $(RES)
+LINKOBJ  = Image.o Lesson30.o Tmatrix.o Tray.o Tvector.o $(RES)
+LIBS =  -L"C:/Program Files/Dev-Cpp/lib" -mwindows -lwinmm -lopengl32 -lglu32 -lglaux -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32
+INCS =  -I"C:/Program Files/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Program Files/Dev-Cpp/include/c++"  -I"C:/Program Files/Dev-Cpp/include/c++/mingw32"  -I"C:/Program Files/Dev-Cpp/include/c++/backward"  -I"C:/Program Files/Dev-Cpp/include" 
+BIN  = Lesson30.exe
+CXXFLAGS = $(CXXINCS)-D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS  -Wno-deprecated
+CFLAGS = $(INCS)-D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS  -Wno-deprecated
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson30.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(LINKOBJ)
+	$(CPP) $(LINKOBJ) -o "Lesson30.exe" $(LIBS)
+
+Image.o: Image.cpp
+	$(CPP) -c Image.cpp -o Image.o $(CXXFLAGS)
+
+Lesson30.o: Lesson30.cpp
+	$(CPP) -c Lesson30.cpp -o Lesson30.o $(CXXFLAGS)
+
+Tmatrix.o: Tmatrix.cpp
+	$(CPP) -c Tmatrix.cpp -o Tmatrix.o $(CXXFLAGS)
+
+Tray.o: Tray.cpp
+	$(CPP) -c Tray.cpp -o Tray.o $(CXXFLAGS)
+
+Tvector.o: Tvector.cpp
+	$(CPP) -c Tvector.cpp -o Tvector.o $(CXXFLAGS)

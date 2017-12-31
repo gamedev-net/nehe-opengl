@@ -1,0 +1,40 @@
+# makefile for opengl (glut) applications
+# author: milix (milix_gr@hotmail.com)
+
+# add here the name of the project 
+PROJ = lesson01
+
+# aliases
+CC = gcc
+RC = windres
+RM = -del
+CP = -copy
+
+# include and library paths
+INCPATH = -I/app/include 
+LIBPATH = -L/app/lib
+
+# compiler and linker switches
+CFLAGS = -O2 -fomit-frame-pointer 
+LDFLAGS = -mwindows -lwinmm -lglut32 -lglu32 -lopengl32 
+
+# add here additional object files
+OBJS = $(PROJ).o  
+
+all: $(PROJ).exe
+
+$(PROJ).exe: $(OBJS)
+	$(CC) $(LIBPATH) -o $@ $(OBJS) $(LDFLAGS)
+
+%.o: %.c
+	$(CC) $(INCPATH) $(CFLAGS) -c $*.c
+
+%.o: %.cpp
+	$(CC) $(INCPATH) $(CFLAGS) -c $*.cpp
+
+%.o: %.rc
+	$(RC) -i $*.rc -o $*.o
+
+clean:
+	$(RM) *.o
+	$(RM) $(PROJ).exe

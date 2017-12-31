@@ -1,0 +1,77 @@
+[Project]
+FileName=Lesson45.dev
+Name=Lesson45
+Ver=1
+IsCpp=1
+Type=0
+Compiler=_@@_
+CppCompiler=_@@_
+Includes=
+Linker=-lopengl32 -lglu32 -lglaux_@@_
+Libs=
+UnitCount=3
+Folders="Header Files","Resource Files","Source Files"
+ObjFiles=
+PrivateResource=
+ResourceIncludes=
+MakeIncludes=
+Icon=
+ExeOutput=
+ObjectOutput=
+OverrideOutput=0
+OverrideOutputName=Lesson45.exe
+HostApplication=
+CommandLine=
+IncludeVersionInfo=0
+SupportXPThemes=0
+CompilerSet=0
+CompilerSettings=000000000000000000
+
+[Unit1]
+FileName=Lesson45.cpp
+Folder="Source Files"
+Compile=1
+CompileCpp=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit2]
+FileName=NeHeGL.cpp
+Folder="Source Files"
+Compile=1
+CompileCpp=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit3]
+FileName=NeHeGL.h
+Folder="Header Files"
+Compile=1
+CompileCpp=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[VersionInfo]
+Major=0
+Minor=1
+Release=1
+Build=1
+LanguageID=1033
+CharsetID=1252
+CompanyName=
+FileVersion=0.1
+FileDescription=Developed using the Dev-C++ IDE
+InternalName=
+LegalCopyright=
+LegalTrademarks=
+OriginalFilename=Lesson45.exe
+ProductName=Lesson45
+ProductVersion=0.1
+AutoIncBuildNr=0
+

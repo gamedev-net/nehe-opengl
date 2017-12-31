@@ -1,0 +1,480 @@
+include get.e
+include dll.e
+include machine.e
+include msgbox.e
+include constants.ew
+include GLfunc.ew
+include GLconst.ew
+
+without warning
+
+atom hRC, hDC, hWnd, hInstance, ClassName
+sequence keys keys = repeat(0,256)  -- array to hold key presses
+
+integer active, fullscreen, retval
+active = TRUE
+fullscreen = TRUE
+hRC = NULL
+hDC = NULL
+hWnd = NULL
+hInstance = NULL
+
+atom LightAmbient, LightDiffuse, LightPosition
+LightAmbient = allocate(16)
+LightDiffuse = allocate(16)
+LightPosition = allocate(16)
+
+poke(LightAmbient,atom_to_float32(0.7)) poke(LightAmbient+4,atom_to_float32(0.7))
+poke(LightAmbient+8,atom_to_float32(0.7)) poke(LightAmbient+12,atom_to_float32(1.0))
+poke(LightDiffuse,atom_to_float32(1.0)) poke(LightDiffuse+4,atom_to_float32(1.0))
+poke(LightDiffuse+8,atom_to_float32(1.0)) poke(LightDiffuse+12,atom_to_float32(1.0))
+poke(LightPosition,atom_to_float32(4.0)) poke(LightPosition+4,atom_to_float32(4.0))
+poke(LightPosition+8,atom_to_float32(6.0)) poke(LightPosition+12,atom_to_float32(1.0))
+
+atom quadratic
+quadratic = NULL
+
+atom xrot, yrot, xrotspeed, yrotspeed, zoom, height
+xrot = 0.0
+yrot = 0.0
+xrotspeed = 0.0
+yrotspeed = 0.0
+zoom = -7.0
+height = 2.0
+
+atom Texture
+sequence texture
+Texture = allocate(12)
+texture = {Texture,Texture + 4,Texture + 8}
+
+procedure ReSizeGLScene(integer width, integer height)
+    if height = 0 then
+        height = 1
+    end if
+    c_proc(glViewport,{0,0,width,height})
+    c_proc(glMatrixMode,{GL_PROJECTION})
+    c_proc(glLoadIdentity,{})
+    c_proc(gluPerspective,{45.0,width/height,0.1,100.0})
+    c_proc(glMatrixMode,{GL_MODELVIEW})
+    c_proc(glLoadIdentity,{})
+end procedure
+
+function LoadBMP(sequence Filename)
+integer File
+atom filename
+    filename = allocate_string(Filename)
+    File = NULL
+    if atom(Filename) then
+        return NULL
+    end if
+    File = open(Filename,"r")
+    if File then
+        close(File)
+        return c_func(auxDIBImageLoad, {filename})
+    end if
+    return NULL
+end function
+
+function LoadGLTextures()
+integer Status
+sequence TextureImage
+    Status = FALSE
+    TextureImage = {0,0,0}
+    TextureImage[1] = LoadBMP("Data\\Envwall.bmp")
+    TextureImage[2] = LoadBMP("Data\\Ball.bmp")
+    TextureImage[3] = LoadBMP("Data\\Envroll.bmp")
+    if TextureImage[1] and TextureImage[2] and TextureImage[3] then
+        Status = TRUE
+        c_proc(glGenTextures, {3,texture[1]})
+        for loop = 1 to 3 do
+            c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(texture[loop])})
+            c_proc(glTexImage2D,{GL_TEXTURE_2D, 0, 3, peek4u(TextureImage[loop]), peek4u(TextureImage[loop]+4), 0, GL_RGB,
+                                 GL_UNSIGNED_BYTE, peek4u(TextureImage[loop]+8)})
+            c_proc(glTexParameteri,{GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR})
+            c_proc(glTexParameteri,{GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR})
+        end for
+    end if
+    for loop = 1 to 3 do
+        if peek4u(TextureImage[loop]) then
+            if peek4u(TextureImage[loop] + 8) then
+                free(peek4u(TextureImage[loop]+8))
+            end if
+            free(peek4u(TextureImage[loop]))
+        end if
+    end for
+    return Status
+end function
+
+
+procedure InitGL()
+    if not LoadGLTextures() then
+        puts(1,"LoadGLTextures failed!" & '\n')
+    end if
+
+    c_proc(glShadeModel,{GL_SMOOTH})
+    c_proc(glClearColor,{0.2,0.5,1.0,1.0})
+    c_proc(glClearDepth,{1.0})
+    c_proc(glClearStencil,{0})
+    c_proc(glEnable,{GL_DEPTH_TEST})
+    c_proc(glDepthFunc,{GL_LEQUAL})
+    c_proc(glHint,{GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST})
+    c_proc(glEnable,{GL_TEXTURE_2D})    -- Enable Texture Mapping
+
+    c_proc(glLightfv,{GL_LIGHT0,GL_AMBIENT,LightAmbient})
+    c_proc(glLightfv,{GL_LIGHT0,GL_DIFFUSE,LightDiffuse})
+    c_proc(glLightfv,{GL_LIGHT0,GL_POSITION,LightPosition})
+    c_proc(glEnable,{GL_LIGHT0})
+    c_proc(glEnable,{GL_LIGHTING})
+
+    quadratic = c_func(gluNewQuadric, {})
+    c_proc(gluQuadricNormals,{quadratic, GLU_SMOOTH})
+    c_proc(gluQuadricTexture,{quadratic, GL_TRUE})
+
+    c_proc(glTexGeni,{GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP}) -- Set The Texture Generation Mode For S To Sphere Mapping
+    c_proc(glTexGeni,{GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP}) -- Set The Texture Generation Mode For T To Sphere Mapping
+
+end procedure
+
+procedure DrawObject()                                  -- Draw Our Ball
+    c_proc(glColor3f,{1.0,1.0,1.0})                     -- Set Color To White
+    c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(texture[2])})    -- Select Texture 2
+    c_proc(gluSphere,{quadratic,0.35,32,16})            -- Draw First Sphere
+
+    c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(texture[3])})    -- Select Texture 3
+    c_proc(glColor4f,{1.0,1.0,1.0,0.4})                 -- Set Color To White With 40% Alpha
+    c_proc(glEnable,{GL_BLEND})                         -- Enable Blending
+    c_proc(glBlendFunc,{GL_SRC_ALPHA,GL_ONE})           -- Set Blending Mode To Mix Based On SRC Alpha
+    c_proc(glEnable,{GL_TEXTURE_GEN_S})                 -- Enable Sphere Mapping
+    c_proc(glEnable,{GL_TEXTURE_GEN_T})                 -- Enable Sphere Mapping
+
+    c_proc(gluSphere,{quadratic,0.35,32,16})            -- Draw Another Sphere Using New Texture
+                                                        -- Textures Will Mix Creating A MultiTexture Effect (Reflection)
+    c_proc(glDisable,{GL_TEXTURE_GEN_S})                -- Disable Sphere Mapping
+    c_proc(glDisable,{GL_TEXTURE_GEN_T})                -- Disable Sphere Mapping
+    c_proc(glDisable,{GL_BLEND})                        -- Disable Blending
+end procedure
+
+procedure DrawFloor()                                       -- Draws The Floor
+    c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(texture[1])})       -- Select Texture 1
+    c_proc(glBegin,{GL_QUADS})                              -- Begin Drawing A Quad
+        c_proc(glNormal3f,{0.0,1.0,0.0})                    -- Normal Pointing Up
+        c_proc(glTexCoord2f,{0.0,1.0})                  -- Bottom Left Of Texture
+        c_proc(glVertex3f,{-2.0,0.0,2.0})               -- Bottom Left Corner Of Floor
+
+        c_proc(glTexCoord2f,{0.0,0.0})                  -- Top Left Of Texture
+        c_proc(glVertex3f,{-2.0,0.0,-2.0})              -- Top Left Corner Of Floor
+
+        c_proc(glTexCoord2f,{1.0,0.0})                  -- Top Right Of Texture
+        c_proc(glVertex3f,{2.0,0.0,-2.0})               -- Top Right Corner Of Floor
+
+        c_proc(glTexCoord2f,{1.0,1.0})                  -- Bottom Right Of Texture
+        c_proc(glVertex3f,{2.0,0.0,2.0})                -- Bottom Right Corner Of Floor
+    c_proc(glEnd,{})                                        -- Done Drawing The Quad
+end procedure
+
+function DrawGLScene()
+atom eqr
+    eqr = allocate(32)
+    -- Clear Screen, Depth Buffer & Stencil Buffer
+    c_proc(glClear,{GL_COLOR_BUFFER_BIT+GL_DEPTH_BUFFER_BIT+GL_STENCIL_BUFFER_BIT})
+
+    -- Clip Plane Equations
+    poke(eqr,     atom_to_float64( 0.0))                        -- Plane Equation To Use For The Reflected Objects
+    poke(eqr + 8, atom_to_float64(-1.0))
+    poke(eqr + 16,atom_to_float64( 0.0))
+    poke(eqr + 24,atom_to_float64( 0.0))
+
+    c_proc(glLoadIdentity,{})                                   -- Reset The Modelview Matrix
+    c_proc(glTranslatef,{0.0,-0.6,zoom})                    -- Zoom And Raise Camera Above The Floor (Up 0.6 Units)
+    c_proc(glColorMask,{0,0,0,0})                               -- Set Color Mask
+    c_proc(glEnable,{GL_STENCIL_TEST})                          -- Enable Stencil Buffer For "marking" The Floor
+    c_proc(glStencilFunc,{GL_ALWAYS,1,1})                       -- Always Passes, 1 Bit Plane, 1 As Mask
+    c_proc(glStencilOp,{GL_KEEP,GL_KEEP,GL_REPLACE})            -- We Set The Stencil Buffer To 1 Where We Draw Any Polygon
+                                                        -- Keep If Test Fails, Keep If Test Passes But Buffer Test Fails
+                                                        -- Replace If Test Passes
+    c_proc(glDisable,{GL_DEPTH_TEST})                           -- Disable Depth Testing
+    DrawFloor()                                     -- Draw The Floor (Draws To The Stencil Buffer)
+                                                        -- We Only Want To Mark It In The Stencil Buffer
+    c_proc(glEnable,{GL_DEPTH_TEST})                            -- Enable Depth Testing
+    c_proc(glColorMask,{1,1,1,1})                               -- Set Color Mask to TRUE, TRUE, TRUE, TRUE
+    c_proc(glStencilFunc,{GL_EQUAL,1,1})                        -- We Draw Only Where The Stencil Is 1
+                                                        -- (I.E. Where The Floor Was Drawn)
+    c_proc(glStencilOp,{GL_KEEP,GL_KEEP,GL_KEEP})               -- Don't Change The Stencil Buffer
+    c_proc(glEnable,{GL_CLIP_PLANE0})                           -- Enable Clip Plane For Removing Artifacts
+                                                        -- (When The Object Crosses The Floor)
+    c_proc(glClipPlane,{GL_CLIP_PLANE0,eqr})    -- Equation For Reflected Objects
+    c_proc(glPushMatrix,{})                                     -- Push The Matrix Onto The Stack
+        c_proc(glScalef,{1.0,-1.0,1.0})                 -- Mirror Y Axis
+        c_proc(glLightfv,{GL_LIGHT0,GL_POSITION,LightPosition})  -- Set Up Light0
+        c_proc(glTranslatef,{0.0,height,0.0})               -- Position The Object
+        c_proc(glRotatef,{xrot,1.0,0.0,0.0})                -- Rotate Local Coordinate System On X Axis
+        c_proc(glRotatef,{yrot,0.0,1.0,0.0})                -- Rotate Local Coordinate System On Y Axis
+        DrawObject()                                    -- Draw The Sphere (Reflection)
+    c_proc(glPopMatrix,{})                                      -- Pop The Matrix Off The Stack
+    c_proc(glDisable,{GL_CLIP_PLANE0})                          -- Disable Clip Plane For Drawing The Floor
+    c_proc(glDisable,{GL_STENCIL_TEST})                         -- We Don't Need The Stencil Buffer Any More (Disable)
+    c_proc(glLightfv,{GL_LIGHT0,GL_POSITION,LightPosition})      -- Set Up Light0 Position
+    c_proc(glEnable,{GL_BLEND})                                 -- Enable Blending (Otherwise The Reflected Object Wont Show)
+    c_proc(glDisable,{GL_LIGHTING})                             -- Since We Use Blending, We Disable Lighting
+    c_proc(glColor4f,{1.0,1.0,1.0,0.8})                 -- Set Color To White With 80% Alpha
+    c_proc(glBlendFunc,{GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA})   -- Blending Based On Source Alpha And 1 Minus Dest Alpha
+    DrawFloor()                                     -- Draw The Floor To The Screen
+    c_proc(glEnable,{GL_LIGHTING})                              -- Enable Lighting
+    c_proc(glDisable,{GL_BLEND})                                -- Disable Blending
+    c_proc(glTranslatef,{0.0,height,0.0})                   -- Position The Ball At Proper Height
+    c_proc(glRotatef,{xrot,1.0,0.0,0.0})                    -- Rotate On The X Axis
+    c_proc(glRotatef,{yrot,0.0,1.0,0.0})                    -- Rotate On The Y Axis
+    DrawObject()                                        -- Draw The Ball
+    xrot += xrotspeed                                   -- Update X Rotation Angle By xrotspeed
+    yrot += yrotspeed                                   -- Update Y Rotation Angle By yrotspeed
+    c_proc(glFlush,{})                                          -- Flush The GL Pipeline
+
+    return TRUE
+end function
+
+procedure ProcessKeyboard()                                 -- Process Keyboard Results
+    if keys[VK_RIGHT] then
+        yrotspeed += 0.08           -- Right Arrow Pressed (Increase yrotspeed)
+    end if
+    if keys[VK_LEFT]then
+        yrotspeed -= 0.08           -- Left Arrow Pressed (Decrease yrotspeed)
+    end if
+    if keys[VK_DOWN] then
+        xrotspeed += 0.08           -- Down Arrow Pressed (Increase xrotspeed)
+    end if
+    if keys[VK_UP]then
+        xrotspeed -= 0.08           -- Up Arrow Pressed (Decrease xrotspeed)
+    end if
+    if keys['A'] then
+        zoom +=0.05             -- 'A' Key Pressed ... Zoom In
+    end if
+    if keys['Z'] then
+        zoom -=0.05             -- 'Z' Key Pressed ... Zoom Out
+    end if
+    if keys[VK_PRIOR] then
+        height +=0.03               -- Page Up Key Pressed Move Ball Up
+    end if
+    if keys[VK_NEXT] then
+        height -=0.03               -- Page Down Key Pressed Move Ball Down
+    end if
+end procedure
+
+integer dmScreenSettings, WindowRect
+
+procedure KillGLWindow()
+    if fullscreen then
+        if c_func(ChangeDisplaySettingsA,{NULL,0}) then end if
+        if c_func(ShowCursor,{TRUE}) then end if
+    end if
+    if hRC then
+        if c_func(wglMakeCurrent,{NULL,NULL}) then end if
+        if c_func(wglDeleteContext,{hRC}) then end if
+        hRC = NULL
+    end if
+    if hRC and not c_func(ReleaseDC,{hWnd,hDC}) then
+        hDC = NULL
+    end if
+    if hWnd and not c_func(DestroyWindow,{hWnd}) then
+        hWnd = NULL
+    end if
+    if dmScreenSettings then
+        free(dmScreenSettings)
+    end if
+    free(WindowRect)
+end procedure
+
+function WndProc(atom hWnd, integer uMsg, atom wParam, atom lParam)
+    if uMsg = WM_ACTIVATE then
+        if not floor(wParam/#10000) then
+            active = TRUE
+        else
+            active = FALSE
+        end if
+    elsif  uMsg = WM_SYSCOMMAND then
+        if wParam = SC_SCREENSAVE then end if
+        if wParam = SC_MONITORPOWER then end if
+    elsif uMsg = WM_CLOSE then
+        c_proc(PostQuitMessage,{0})
+    elsif uMsg = WM_KEYDOWN then
+        keys[wParam] = TRUE
+    elsif uMsg = WM_KEYUP then
+        keys[wParam] = FALSE
+    elsif uMsg = WM_SIZE then
+        ReSizeGLScene(and_bits(lParam,#FFFF),floor(lParam/#10000))
+    end if
+    return c_func(DefWindowProcA,{hWnd, uMsg, wParam, lParam})
+end function
+
+integer wc wc = allocate(40)
+function ClassRegistration()
+integer WndProcAddress, id
+    id = routine_id("WndProc")
+    if id = -1 then
+    puts(1, "routine_id failed!\n")
+    abort(1)
+    end if
+    WndProcAddress = call_back(id)
+    hInstance = c_func(GetModuleHandleA,{NULL})
+    ClassName = allocate_string("OpenGL")
+    poke4(wc,or_all({CS_HREDRAW, CS_VREDRAW, CS_OWNDC}))
+    poke4(wc+4,WndProcAddress)
+    poke4(wc+8,0)
+    poke4(wc+12,0)
+    poke4(wc+16,hInstance)
+    poke4(wc+20,c_func(LoadIconA,{NULL,IDI_WINLOGO}))
+    poke4(wc+24,c_func(LoadCursorA,{NULL, IDC_ARROW}))
+    poke4(wc+28,NULL)
+    poke4(wc+32,NULL)
+    poke4(wc+36,ClassName)
+    if not c_func(RegisterClassA,{wc}) then
+        retval = message_box("Failed to register class","Error", or_bits(MB_OK,MB_ICONINFORMATION))
+        return FALSE
+    else
+        return TRUE
+    end if
+end function
+
+integer regd regd = FALSE
+procedure CreateGLWindow(atom title, integer width, integer height, integer bits, integer fullscreenflag)
+    atom PixelFormat, pfd, dwExStyle, dwStyle
+    sequence s
+    if regd = FALSE then
+        if ClassRegistration() then
+            regd = TRUE
+        end if
+    end if
+    fullscreen = fullscreenflag
+    if fullscreen then
+        dmScreenSettings = allocate(156)
+        mem_set(dmScreenSettings,0,156)
+        s = int_to_bytes(156)
+        poke(dmScreenSettings + 36,{s[1],s[2]})
+        poke4(dmScreenSettings + 40,or_all({DM_BITSPERPEL,DM_PELSWIDTH,DM_PELSHEIGHT}))
+        poke4(dmScreenSettings + 104, bits)
+        poke4(dmScreenSettings + 108, width)
+        poke4(dmScreenSettings + 112, height)
+        if c_func(ChangeDisplaySettingsA,{dmScreenSettings,CDS_FULLSCREEN}) != DISP_CHANGE_SUCCESSFUL then
+            if message_box("The requested fullscreen mode is not supported by\nyour video card. " &
+                           "Use windowed mode instead?","Error", or_bits(MB_YESNO,MB_ICONEXCLAMATION)) = IDYES then
+            else
+                retval = message_box("Program will now close","Error",or_bits(MB_OK,MB_ICONSTOP))
+            end if
+        end if
+    else
+        dmScreenSettings = NULL
+    end if
+    if fullscreen then
+        dwExStyle = WS_EX_APPWINDOW
+        dwStyle = WS_POPUP
+        if c_func(ShowCursor,{FALSE}) then end if
+    else
+        dwExStyle = or_bits(WS_EX_APPWINDOW,WS_EX_WINDOWEDGE)
+        dwStyle = WS_OVERLAPPEDWINDOW
+    end if
+    WindowRect = allocate(16)
+    poke4(WindowRect,0)
+    poke4(WindowRect + 4,width)
+    poke4(WindowRect + 8, 0)
+    poke4(WindowRect + 12, height)
+    if c_func(AdjustWindowRectEx,{WindowRect, dwStyle, FALSE, dwExStyle}) then end if
+    hWnd = c_func(CreateWindowExA,{dwExStyle,  --extended window style
+                                   ClassName,  --class
+                                   title,      --window caption
+                                   or_all({WS_CLIPSIBLINGS,WS_CLIPCHILDREN,dwStyle}),  --window style
+                                   0,
+                                   0,
+                                   peek4u(WindowRect + 4) - peek4u(WindowRect),
+                                   peek4u(WindowRect + 12) - peek4u(WindowRect + 8),
+                                   NULL,
+                                   NULL,
+                                   hInstance,
+                                   NULL})
+    if hWnd = NULL then
+        KillGLWindow()
+        retval = message_box("Window creation error","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    pfd = allocate(40)  --PIXELFORMATDESCRIPTOR
+    mem_set(pfd,0,40)
+    poke(pfd, 40)  --size of pfd structure
+    poke(pfd + 2, 1) --version
+    poke4(pfd + 4, or_all({PFD_DRAW_TO_WINDOW,PFD_SUPPORT_OPENGL,PFD_DOUBLEBUFFER})) --properties flags
+    poke(pfd + 8, PFD_TYPE_RGBA)  --request an rgba format
+    poke(pfd + 9, 24)  --select color depth
+    poke(pfd + 23, 24)  --32bit Z-buffer
+
+    hDC = c_func(GetDC,{hWnd})  --create GL device context to match window device context
+    if not hDC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL device context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    PixelFormat = c_func(ChoosePixelFormat,{hDC,pfd})  --find a pixel format matching PIXELFORMATDESCRIPTOR
+    if not PixelFormat then
+        KillGLWindow()
+        retval = message_box("Can't find a suitable pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(SetPixelFormat,{hDC,PixelFormat,pfd})) then  --set the pixel format
+        KillGLWindow()
+        retval = message_box("Can't set the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not c_func(DescribePixelFormat, {hDC,PixelFormat,40,pfd}) then
+        retval = message_box("Can't describe the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    hRC = c_func(wglCreateContext,{hDC})  --create GL rendering context
+    if not hRC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(wglMakeCurrent,{hDC,hRC})) then  --make the GL rendering context active
+        KillGLWindow()
+        retval = message_box("Can't activate the GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    retval = c_func(ShowWindow,{hWnd,SW_SHOW}) --show the window
+    retval = c_func(SetForegroundWindow,{hWnd}) --set it to always be in foreground
+    retval = c_func(SetFocus,{hWnd}) --give it focus
+    ReSizeGLScene(width, height)  --draw the GL scene to match the window size
+    InitGL()  --initialize OpenGL
+end procedure
+
+integer MSG MSG = allocate(28)
+integer title title = allocate_string("OpenGL")
+procedure WinMain()
+integer done, msg_message
+    done = FALSE
+    if message_box("Would you like to run in fullscreen mode?","Start Fullscreen?",or_bits(MB_YESNO,MB_ICONQUESTION)) = IDNO then
+        fullscreen = FALSE
+    else
+        fullscreen = TRUE
+    end if
+    CreateGLWindow(title,640,480,24,fullscreen)
+    while not done do
+        if c_func(PeekMessageA,{MSG,NULL,0,0,PM_REMOVE}) then
+            msg_message = peek4u(MSG+4)
+            if msg_message = WM_QUIT then
+                done = TRUE
+            else
+                retval = c_func(TranslateMessage,{MSG})
+                retval = c_func(DispatchMessageA,{MSG})
+            end if
+        else
+            if ((active and not DrawGLScene()) or keys[VK_ESCAPE]) then
+                done = TRUE
+            else
+                retval = c_func(SwapBuffers,{hDC})
+                ProcessKeyboard()
+                if keys[VK_F1] then
+                    keys[VK_F1] = FALSE
+                    KillGLWindow()
+                    if fullscreen = 0 then
+                        fullscreen = 1
+                    else
+                        fullscreen = 0
+                    end if
+                    CreateGLWindow(title,640,480,24,fullscreen)
+                end if
+            end if
+        end if
+    end while
+    KillGLWindow()
+end procedure
+
+WinMain()

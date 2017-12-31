@@ -1,0 +1,443 @@
+/**************************************
+*                                     *
+*     Playing AVI Files In OpenGL     *
+*   using the avifile lib (>= 0.60)   *
+*                                     *
+*         Linux version by            *
+*          Matthias Haack             *
+*              2003                   *
+*      matthias.haack@epost.de        *
+*                                     *
+*         Based on code of:           *
+*      Jeff Molofee's Lesson 35       *
+*       http://nehe.gamedev.net       *
+*              2001                   *
+*                                     *
+**************************************/
+
+// OpenGL specific
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
+
+// Video specific
+
+#include <avifile/avifile.h>
+#include <avifile/version.h>
+
+#if AVIFILE_MINOR_VERSION > 6
+  #include <avifile/avm_default.h>
+#else
+  #include <avifile/default.h>
+#endif
+
+#include <avifile/image.h>
+#include <avifile/StreamInfo.h>
+
+
+#include <fstream>
+#include <iostream>
+#include <sys/types.h>
+
+using namespace std;
+
+
+// variables
+int win_width        = 512;
+int win_height       = 512;
+int TEX_WIDTH        = 256;
+int TEX_HEIGHT       = 256;
+GLfloat tex_param_s  = 1.0f;
+GLfloat tex_param_t  = 1.0f;
+GLfloat aspect_ratio = 1.0f;
+GLuint cube_list;
+GLuint texture;                 // we need one texture later
+
+GLdouble *tex_mat = 0;
+
+int effect           = 0;       // switch between the effects
+int frame            = 0;
+bool bg              = true;    // enable background   ('b' key)
+bool env             = true;    // enable environment  ('e' key)
+GLfloat angle        = 0.0f;
+
+int msec;
+int width;                      // width and height of video stream
+int height;
+double stream_fps = 0;          // fps (for playback, since we don't use avi player)
+
+GLUquadricObj *quadratic;       // Storage For Our Quadratic Objects
+avm::IReadFile *avifile = 0;      // represents the avi file
+avm::IReadStream *avistream = 0;  // represents the avi stream
+StreamInfo *streaminfo = 0;       // represents the avi streaminfo
+CImage *image = 0;                // an image (provided by avifile)
+uint8_t *ui_image_copy = 0;       // image data (for use with gluScaleImage and glTexImage2D)
+
+
+
+// forward declarations
+void display_func(void);
+void keyboard_func(unsigned char, int, int);
+void timer_func(int);
+void initialize(void);
+
+
+class FileNotOpen {
+  char* info;
+  public:
+    FileNotOpen(char* info) { this->info = info; }
+    void print() { cerr << info << endl << flush; }
+};
+
+
+
+// the main function
+int main(int argc, char* argv[])
+{
+
+  try {
+    glutInit(&argc,argv);
+    glutInitWindowSize(win_width, win_height); 
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA|GLUT_DEPTH);
+    glutCreateWindow("Lesson 35");  
+
+    glutDisplayFunc(display_func);
+    glutKeyboardFunc(keyboard_func);
+
+    // open avi file and get info about the avi stream
+    if (argc != 1) {
+      cout << "Opening " << argv[1] << endl;
+      avifile = avm::CreateReadFile(argv[1]);
+    } else
+      avifile = avm::CreateReadFile("data/Face2.avi");
+
+    if (avifile->IsOpened())
+      avistream = avifile->GetStream(0, avm::IReadStream::Video );
+    else
+      throw FileNotOpen("Error opening avi-file");
+
+    avistream->StartStreaming();
+    streaminfo = avistream->GetStreamInfo();
+    width      = streaminfo->GetVideoWidth();
+    height     = streaminfo->GetVideoHeight();
+    stream_fps = streaminfo->GetFps();
+
+    // adjust texture to video file (256 is standard (see declaration above))
+    if (width > 256)
+      TEX_WIDTH = 512;
+    else if (width > 512)
+      TEX_WIDTH = 1024;
+    else if (width > 1024)
+      TEX_WIDTH = 2048;
+
+    if (height > 256)
+      TEX_HEIGHT = 512;
+    else if (height > 512)
+      TEX_HEIGHT = 1024;
+    else if (height > 1024)
+      TEX_HEIGHT = 2048;
+
+    tex_param_s = static_cast<GLfloat>(width)  / static_cast<GLfloat>(TEX_WIDTH);
+    tex_param_t = static_cast<GLfloat>(height) / static_cast<GLfloat>(TEX_HEIGHT);
+
+    ui_image_copy = new uint8_t[TEX_WIDTH*TEX_HEIGHT*3*sizeof(uint8_t)];
+
+    /* create texture transform matrix (avi file must not be 2^n by 2^m but a texture has to be) */
+    tex_mat = new GLdouble[16];
+    for (int i=0; i<16; ++i) tex_mat[i] = 0.0;
+    tex_mat[0]  = tex_param_s;
+    tex_mat[5]  = tex_param_t;
+    tex_mat[10] = tex_mat[15] = 1.0;
+
+    initialize();       // init gluQuadrics, glTexture, ... (needs also tex_param_s and tex_param_t)
+
+
+    // this will call our timer_func in 1 second (only once)
+    glutTimerFunc(1000, timer_func, 0);
+
+    glutMainLoop();
+    return 0;
+  }
+
+  catch(FileNotOpen& error) {
+    error.print();
+  }
+
+  catch(...) {
+    cerr << "unknown error" << endl << flush;
+  }
+
+
+}
+
+
+
+
+// let's set some things
+void initialize(void)
+{
+  quadratic=gluNewQuadric();                // Create A Pointer To The Quadric Object
+  gluQuadricNormals(quadratic, GLU_SMOOTH);	// Create Smooth Normals
+  gluQuadricTexture(quadratic, GL_TRUE);    // Create Texture Coords
+
+	glClearColor (0.0f, 0.0f, 0.0f, 0.5f);    // Black Background
+	glClearDepth (1.0f);					            // Depth Buffer Setup
+	glDepthFunc (GL_LEQUAL);								  // The Type Of Depth Testing (Less Or Equal)
+	glEnable(GL_DEPTH_TEST);									// Enable Depth Testing
+	glShadeModel (GL_SMOOTH);									// Select Smooth Shading
+	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	 
+
+	glClearColor (0.0f, 0.0f, 0.0f, 0.5f);    // Black Background
+	glClearDepth (1.0f);									    // Depth Buffer Setup
+	glDepthFunc (GL_LEQUAL);									// The Type Of Depth Testing (Less Or Equal)
+	glEnable(GL_DEPTH_TEST);									// Enable Depth Testing
+	glShadeModel (GL_SMOOTH);									// Select Smooth Shading
+	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	
+
+  glMatrixMode(GL_PROJECTION);
+  gluPerspective(60.0, 1.0, 0.2, 40.0);     // field of fiew, aspect, near, far
+  glMatrixMode(GL_MODELVIEW);
+
+  glGenTextures(1, &texture);               // generate OpenGL texture object
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture( GL_TEXTURE_2D, texture );  // use previously created texture object and set options
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);  // how to set texture coords
+  glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+
+
+  // display lists are much faster than drawing directly
+  cube_list = glGenLists(1);              // generate display list
+  glNewList(cube_list, GL_COMPILE_AND_EXECUTE);  // fill display list
+		glBegin(GL_QUADS);										// Begin Drawing A Cube
+			// Front Face
+			glNormal3f( 0.0f, 0.0f, 0.5f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+			// Back Face   0
+			glNormal3f( 0.0f, 0.0f,-0.5f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+			// Top Face
+			glNormal3f( 0.0f, 0.5f, 0.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+			// Bottom Face
+			glNormal3f( 0.0f,-0.5f, 0.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+			// Right Face
+			glNormal3f( 0.5f, 0.0f, 0.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f, -1.0f, -1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f, -1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f( 1.0f, -1.0f,  1.0f);
+			// Left Face
+			glNormal3f(-0.5f, 0.0f, 0.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, -1.0f, -1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(-1.0f, -1.0f,  1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  1.0f);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f, -1.0f);
+		glEnd();												// Done Drawing Our Cube
+  glEndList();
+
+  // set texture transform matrix to alter (here only to scale) texture coordinates
+  // (our video stream must not be 2^n by 2^m but our texture has to be)
+  glMatrixMode(GL_TEXTURE);
+  glLoadMatrixd(tex_mat);
+  glMatrixMode(GL_MODELVIEW);
+}
+
+
+
+// OpenGL/GLUT functions
+void timer_func(int which_timer) {
+
+  // if we got signal for timer 0, read one frame and create a texture of it
+  if (which_timer == 0) {
+
+    image = avistream->GetFrame(true);
+    if (!avistream->Eof() && image ) {
+      //gluScaleImage( GL_RGB, width, height, GL_UNSIGNED_BYTE, image->Data(0),
+      //               TEX_WIDTH, TEX_HEIGHT, GL_UNSIGNED_BYTE, ui_image_copy );
+
+      // this is about 30-40 times faster then using gluScaleImage(...)
+      // for (int j=0; j<height; ++j)
+      //   memcpy(&ui_image_copy[j*TEX_WIDTH*3], image->At(0,j), width*sizeof(uint8_t)*3);
+
+    // avifile < v0.7 swaps top and bottom, lets fix this
+#if AVIFILE_MINOR_VERSION < 7  
+      for (int j=0; j<height; ++j)
+        memcpy(&ui_image_copy[j*TEX_WIDTH*3], image->At(0, j), width*sizeof(uint8_t)*3);
+#else
+      for (int j=0; j<height; ++j)
+        memcpy(&ui_image_copy[j*TEX_WIDTH*3], image->At(0, height-j-1), width*sizeof(uint8_t)*3);
+#endif
+
+      //glBindTexture( GL_TEXTURE_2D, texture );  // is done in initilaize() !
+      // look at the GL_BGR (flips BGR video to RGB texture)
+      glTexImage2D ( GL_TEXTURE_2D, 0, GL_RGB, TEX_WIDTH, TEX_HEIGHT, 0,
+                     GL_BGR, GL_UNSIGNED_BYTE, ui_image_copy);
+
+      image->Release();
+    } else {
+      avistream->Seek(0);  // back to start to stream
+    }
+
+    glutTimerFunc( (int) (1000.0f / stream_fps), timer_func, 0);  // re-set timer function
+    glutPostRedisplay();   // redraw our scene
+  }
+
+}
+
+
+
+void keyboard_func(unsigned char key, int x, int y) 
+{
+
+  // process keyboard input (no Fx keys!)
+  switch(key) {
+
+  case '0':
+  case '1':
+  case '2':
+    effect = key - '0';
+    cout << "effect " << effect << endl;
+    display_func();
+    break;
+
+  case 'b':
+    if (bg) {
+      bg = false;
+      cout << "background off" << endl;
+    } else {
+      bg = true;
+      cout << "backgroud on" << endl;
+    }
+    display_func();
+    break;
+
+  case 'e':
+    if (env) {
+      env = false;
+      cout << "environment mapping off" << endl;
+    } else {
+      env = true;
+      cout << "environment mapping on" << endl;
+    }
+    display_func();
+    break;
+
+
+  case 'q':
+  case 27:
+    avistream->StopStreaming();
+    exit(0);
+    break; 
+      
+  default:
+    break;  
+    
+  }
+    
+}
+
+
+#if AVIFILE_VERSION_MINOR > 6
+  #define ZERO 0.0f 
+  #define ONE  1.0f
+#else
+  #define ZERO 0.0f
+  #define ONE  1.0f
+#endif
+
+
+void display_func(void) 
+{
+  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		// Clear Screen And Depth Buffer
+
+  // GL_TEXTURE_2D was enabled in init function !
+  angle += 20.0f / 60.0f;             // does some rotation
+
+	if (bg)														  // Is Background Visible?
+	{
+		glLoadIdentity();		              // Reset The Modelview Matrix
+		glBegin(GL_QUADS);                // Begin Drawing The Background (One Quad)
+			// Front Face
+			glTexCoord2f(ONE , ONE ); glVertex3f( 11.0f,  8.3f, -20.0f);
+			glTexCoord2f(ZERO, ONE ); glVertex3f(-11.0f,  8.3f, -20.0f);
+			glTexCoord2f(ZERO, ZERO); glVertex3f(-11.0f, -8.3f, -20.0f);
+			glTexCoord2f(ONE , ZERO); glVertex3f( 11.0f, -8.3f, -20.0f);
+		glEnd();                          // Done Drawing The Background
+	}
+
+	glLoadIdentity ();                  // Reset The Modelview Matrix
+	glTranslatef (0.0f, 0.0f, -10.0f);  // Translate 10 Units Into The Screen
+
+	if (env)												    // Is Environment Mapping On?
+	{
+		glEnable(GL_TEXTURE_GEN_S);       // Enable Texture Coord Generation For S (NEW)
+		glEnable(GL_TEXTURE_GEN_T);       // Enable Texture Coord Generation For T (NEW)
+	}
+	
+	glRotatef(angle*2.3f,1.0f,0.0f,0.0f);		 // Throw In Some Rotations To Move Things Around A Bit
+	glRotatef(angle*1.8f,0.0f,1.0f,0.0f);		 // Throw In Some Rotations To Move Things Around A Bit
+	glTranslatef(0.0f,0.0f,2.0f);						// After Rotating Translate To New Position
+
+	switch (effect)												// Which Effect?
+	{
+	case 0:														// Effect 0 - Cube
+		glRotatef (angle*1.3f, 1.0f, 0.0f, 0.0f);				// Rotate On The X-Axis By angle
+		glRotatef (angle*1.1f, 0.0f, 1.0f, 0.0f);				// Rotate On The Y-Axis By angle
+		glRotatef (angle*1.2f, 0.0f, 0.0f, 1.0f);				// Rotate On The Z-Axis By angle
+	  glCallList(cube_list);	                        // Draw cube via display list
+    break;													// Done Effect 0
+
+	case 1:														// Effect 1 - Sphere
+		glRotatef (angle*1.3f, 1.0f, 0.0f, 0.0f);				// Rotate On The X-Axis By angle
+		glRotatef (angle*1.1f, 0.0f, 1.0f, 0.0f);				// Rotate On The Y-Axis By angle
+		glRotatef (angle*1.2f, 0.0f, 0.0f, 1.0f);				// Rotate On The Z-Axis By angle
+    gluSphere(quadratic,1.3f,20,20);						// Draw A Sphere
+		break;													// Done Drawing Sphere
+
+	case 2:														// Effect 2 - Cylinder
+		glRotatef (angle*1.3f, 1.0f, 0.0f, 0.0f);				// Rotate On The X-Axis By angle
+		glRotatef (angle*1.1f, 0.0f, 1.0f, 0.0f);				// Rotate On The Y-Axis By angle
+		glRotatef (angle*1.2f, 0.0f, 0.0f, 1.0f);				// Rotate On The Z-Axis By angle
+		glTranslatef(0.0f,0.0f,-1.5f);							// Center The Cylinder
+    gluCylinder(quadratic,1.0f,1.0f,3.0f,32,32);			// Draw A Cylinder
+		break;													// Done Drawing Cylinder
+	}
+
+	if (env)													// Environment Mapping Enabled?
+	{
+		glDisable(GL_TEXTURE_GEN_S);							// Disable Texture Coord Generation For S (NEW)
+		glDisable(GL_TEXTURE_GEN_T);							// Disable Texture Coord Generation For T (NEW)
+	}
+	
+  glutSwapBuffers();    // redraw scene
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

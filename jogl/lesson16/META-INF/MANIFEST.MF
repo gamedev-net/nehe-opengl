@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Created-By: NetBeans IDE
+Specified-By: Fog/Lesson16.jarContent
+Main-Class: Fog/Lesson16
+

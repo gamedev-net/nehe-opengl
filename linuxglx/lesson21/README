@@ -1,0 +1,42 @@
+Readme for NeHe's OpenGL Tutorial Lesson21 Linux/GLX port
+==========================================================
+
+Compilation:
+
+make
+
+Running:
+
+./lesson21
+
+Requirements:
+
+- OpenGL headers and libraries 
+- Xserver with GLX and XF86VidMode extensions (I used version 4.0.1)
+- gcc (any other ANSI C compiler should do it too; I used gcc 2.95.2)
+
+Known bugs/issues:
+
+- does not stop drawing even if iconified (though it is not visible)
+- does not explicitly select color depth
+- sound stuff is *very* simple and does not properly support mixing 2
+sounds, playing different formats in one session (resampling and stuff), and
+will likely have problems with bigger soundfiles than the effects used in
+this example (since we just write the whole stuff to the soundcard in one big
+chunk...)
+
+improvements/differences over other ports:
+- somehow 10% higher framerate than SDL-port on my machine (do not exactly
+know why, but hey, thats nice somehow...)
+- effects sound better than with SDL-port but no music
+- IMHO much better keyboard control than SDL-port (you can hold the keys down
+to keep moving not having to press them for every step/box) 
+
+Contact:
+
+If you have any problems, comments, or have useful hints, 
+email to Mihael.Vrbanec@stud.uni-karlsruhe.de
+
+Credits:
+Jeff Molofee (nehe@connect.ab.ca) for writing the tutorials.
+Mihael Vrbanec for the port to Linux/GLX and ANSI C

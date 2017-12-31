@@ -1,0 +1,65 @@
+This is the SGI port of NeHe's OpenGL tutorial.
+Port done by Lakmal Gunasekara 1999.
+It's mainly based on the Solaris port of myself which
+is based on the linux port from Richard Campbell.
+
+NOTE: You will see that the comments are pretty ugly in the source files. I had to replace every comment of type // which is C++ style with /* */  
+      which is the original c style. I used perl for this. But because of the fact that I'm not so good in perl the result doesn't look very good in human eyes. 
+      Nevertheless the C Compiler doesn't care
+-----------------------------------------------------------
+
+Usage:
+
+make 
+
+This will build the tutorial you actually have (lesson1, lesson2...)
+
+-----------------------------------------------------------
+
+Hardware requirements:
+
+- A SGI workstation (I've been using an INDY with Vino video graphic subsystem)
+If you have, take something more powerfull.
+
+-----------------------------------------------------------
+  
+Software requirements:
+
+Operating system:
+
+- IRIX 5.3 (I don't think you also have such an oldtimer in front of you)
+
+OpenGL:
+
+- The version that's shipped with IRIX should be ok.
+
+GLUT:
+
+- GLUT 3.7beta. 
+
+GLUT is NOT shipped by SGI.
+
+You can download the precompiled library from:
+
+http://reality.sgi.com/opengl/glut3/glut3.html
+
+But building it by yourself is very easy under IRIX.
+
+cc:
+
+- I've used version 3.19 but I think there are newer version out there ( :-/ )
+
+Known bugs:
+
+Probably a lot of...
+
+Contact:
+
+If you have problems, or have useful hints, email me at lakmal@gunasekara.de.
+
+Credits:
+Jeff Molofee (nehe@home.com) for writing the tutorials.
+Richard Campbell (ulmont@bellsouth.net) for doing the linux port.
+
+- Lakmal Gunasekara 1999
+

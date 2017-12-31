@@ -1,0 +1,22 @@
+OpenGL Tutorial #42.
+
+Project Name: Multiple viewports in a single window
+
+Project Description: How to create multiple viewports in a single window
+
+Authors Name:	evik (evik) :) / Jeff Molofee (NeHe)
+
+ Ported to Linux/SDL by evik, using base Linux/SDL code from tutorial #37.
+ Credits goes for the base code to Sean Farrel and whoever he gives credit.
+ (Just picked the latest SDL code in my directory :).)
+
+Hosted Web Site: http://nehe.gamedev.net
+
+COPYRIGHT AND DISCLAIMER: (c)2003 Jeff Molofee
+
+       If you plan to put this program on your web page or a cdrom of
+       any sort, let me know via email, I'm curious to see where
+       it ends up :)
+
+       If you use the code for your own projects please give the author credit,
+       or mention his web site somewhere in your program or it's docs.

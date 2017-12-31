@@ -1,0 +1,418 @@
+-- ************************************************
+-- *                                              *
+-- *        Jeff Molofee's OpenGL Basecode        *
+-- *                                              *
+-- *            http:--nehe.gamedev.net           *
+-- *                                              *
+-- *                    2003                      *
+-- *                                              *
+-- *          Converted to Euphoria by            *
+-- *			  Evan Marshall        	          *
+-- *				   2004		                  *
+-- ************************************************
+
+include NeHeGL.ew
+
+global integer Terminate_id, Toggle_id
+global atom window
+window = GL_Window()
+
+	poke4(window+0,allocate(256))
+
+--add program specific include here
+include Lesson42.exw
+
+without warning
+
+constant WM_TOGGLEFULLSCREEN = WM_USER+1									-- Application Define Message For Toggling
+
+integer g_isProgramLooping											-- Window Creation Loop, For FullScreen/Windowed Toggle																		-- Between Fullscreen / Windowed Mode
+integer g_createFullScreen											-- If TRUE, Then Create Fullscreen
+
+global procedure TerminateApplication()							-- Terminate The Application
+ 	if c_func(PostMessage,{peek4u(window+4), WM_QUIT, 0, 0}) then end if							-- Send A WM_QUIT Message
+	g_isProgramLooping = FALSE											-- Stop Looping Of The Program
+end procedure
+Terminate_id = routine_id("TerminateApplication")
+
+
+procedure ToggleFullscreen()								-- Toggle Fullscreen/Windowed
+	if c_func(PostMessage,{peek4u(window+4), WM_TOGGLEFULLSCREEN, 0, 0}) then end if				-- Send A WM_TOGGLEFULLSCREEN Message
+end procedure
+Toggle_id = routine_id("ToggleFullscreen")
+
+
+procedure ReshapeGL(integer width, integer height)									-- Reshape The Window When It's Moved Or Resized
+	c_proc(glViewport,{0, 0, width, height})				-- Reset The Current Viewport
+end procedure
+
+function ChangeScreenResolution(integer width, integer height, integer bits)	-- Change The Screen Resolution
+atom dmScreenSettings
+        dmScreenSettings = allocate(148)
+        mem_set(dmScreenSettings,0,148)
+        poke(dmScreenSettings + 36,148)
+        poke4(dmScreenSettings + 40,or_all({DM_BITSPERPEL,DM_PELSWIDTH,DM_PELSHEIGHT}))
+        poke4(dmScreenSettings + 104, bits)
+        poke4(dmScreenSettings + 108, width)
+        poke4(dmScreenSettings + 112, height)
+        if c_func(ChangeDisplaySettingsA,{dmScreenSettings,CDS_FULLSCREEN}) != DISP_CHANGE_SUCCESSFUL then
+            return FALSE
+        else 
+        	return TRUE
+        end if
+end function
+
+function CreateWindowGL(atom window)									-- This Code Creates Our OpenGL Window
+atom	timer, pfd														
+atom windowStyle, windowExtendedStyle, PixelFormat
+atom windowRect
+
+	timer = allocate(8)																-- Holds High Resolution Timer Information
+	windowStyle = WS_OVERLAPPEDWINDOW							-- Define Our Window Style
+	windowExtendedStyle = WS_EX_APPWINDOW						-- Define The Window's Extended Style
+
+    pfd = allocate(40)  --PIXELFORMATDESCRIPTOR
+    mem_set(pfd,0,40)
+    poke(pfd, 40)  --size of pfd structure
+    poke(pfd + 2, 1) --version
+    poke4(pfd + 4, or_all({PFD_DRAW_TO_WINDOW,PFD_SUPPORT_OPENGL,PFD_DOUBLEBUFFER})) --properties flags
+    poke(pfd + 8, PFD_TYPE_RGBA)  --request an rgba format
+    poke(pfd + 9, peek4u(window+32))  --select color depth
+    poke(pfd + 23, 16)  --16bit Z-buffer
+	
+    windowRect = allocate(16)
+	poke4(windowRect, 0)
+	poke4(windowRect+4,0)
+	poke4(windowRect+8,peek4u(window+24))
+	poke4(windowRect+12,peek4u(window+28))	-- Define Our Window Coordinates
+
+	if peek4u(window+36) = TRUE then							-- Fullscreen Requested, Try Changing Video Modes
+		if ChangeScreenResolution(peek4u(window+24), peek4u(window+28), peek4u(window+32)) = FALSE then
+			-- Fullscreen Mode Failed.  Run In Windowed Mode Instead
+			if message_box("Mode Switch Failed.\nRunning In Windowed Mode.", "Error", or_bits(MB_OK, MB_ICONEXCLAMATION)) then
+				poke4(window+36,FALSE)							-- Set isFullscreen To False (Windowed Mode)
+			end if
+		else															-- Otherwise (If Fullscreen Mode Was Successful)
+			if c_func(ShowCursor,{FALSE}) then end if				-- Turn Off The Cursor
+			windowStyle = WS_POPUP										-- Set The WindowStyle To WS_POPUP (Popup Window)
+			windowExtendedStyle += WS_EX_TOPMOST						-- Set The Extended Window Style To WS_EX_TOPMOST
+		end if																-- (Top Window Covering Everything Else)
+	else																-- If Fullscreen Was Not Selected
+		-- Adjust Window, Account For Window Borders
+		if c_func(AdjustWindowRectEx,{windowRect, windowStyle, 0, windowExtendedStyle}) = 0 then
+			if message_box("Can't adjust window rectangle","Error",or_all({MB_OK,MB_ICONEXCLAMATION})) then end if
+		end if
+	end if
+
+	-- Create The OpenGL Window
+	poke4(window+4, c_func(CreateWindowExA,{
+								   windowExtendedStyle,					-- Extended Style
+								   peek4u(peek4u(window+16)+4),	-- Class Name
+								   peek4u(window+20),					-- Window Title
+								   windowStyle,							-- Window Style
+								   0, 0,								-- Window X,Y Position
+								   peek4u(windowRect+8) - peek4u(windowRect),	-- Window Width
+								   peek4u(windowRect+12) - peek4u(windowRect+4),	-- Window Height
+								   NULL,						-- Desktop Is Window's Parent
+								   NULL,						-- No Menu
+								   peek4u(peek4u(window+16)),   -- Pass The Window Instance
+								   window}))
+
+	if peek4u(window+4) = 0 then										-- Was Window Creation A Success?
+		if message_box("Error","Can't Create Window", or_all({MB_ICONEXCLAMATION,MB_OK})) then end if
+		return FALSE													-- If Not Return False
+	end if
+
+	poke4(window+8,c_func(GetDC,{peek4u(window+4)}))				    -- Grab A Device Context For This Window
+	if peek4u(window+8)= 0 then											-- Did We Get A Device Context?
+		-- Failed
+		if c_func(DestroyWindow,{peek4u(window+4)}) then end if			-- Destroy The Window
+		poke4(window+4,0)												-- Zero The Window Handle
+		return FALSE													-- Return False
+	end if
+
+	PixelFormat = c_func(ChoosePixelFormat,{peek4u(window+8), pfd})		-- Find A Compatible Pixel Format
+	if PixelFormat = 0 then												-- Did We Find A Compatible Format?
+		-- Failed
+		if c_func(ReleaseDC,{peek4u(window+4), peek4u(window+8)}) then end if	-- Release Our Device Context
+		poke4(window+8,0)												-- Zero The Device Context
+		if c_func(DestroyWindow,{peek4u(window+4)}) then end if			-- Destroy The Window
+		poke4(window+4,0)												-- Zero The Window Handle
+		return FALSE													-- Return False
+	end if
+
+	if c_func(SetPixelFormat,{peek4u(window+8), PixelFormat, pfd}) = FALSE then		-- Try To Set The Pixel Format
+		-- Failed
+		if c_func(ReleaseDC,{peek4u(window+4), peek4u(window+8)}) then end if		-- Release Our Device Context
+		poke4(window+8,0)												-- Zero The Device Context
+		if c_func(DestroyWindow,{peek4u(window+4)})	then end if			-- Destroy The Window
+		poke4(window+4,0)												-- Zero The Window Handle
+		return FALSE													-- Return False
+	end if
+
+	poke4(window+12,c_func(wglCreateContext,{peek4u(window+8)}))		-- Try To Get A Rendering Context
+	if peek4u(window+12) = 0 then 										-- Did We Get A Rendering Context?
+		-- Failed
+		if c_func(ReleaseDC,{peek4u(window+4), peek4u(window+8)}) then end if	-- Release Our Device Context
+		poke4(window+8,0)												-- Zero The Device Context
+		if c_func(DestroyWindow,{peek4u(window+4)}) then end if			-- Destroy The Window
+		poke4(window+4,0)												-- Zero The Window Handle
+		return FALSE													-- Return False
+	end if
+
+	-- Make The Rendering Context Our Current Rendering Context
+	if c_func(wglMakeCurrent,{peek4u(window+8), peek4u(window+12)}) = FALSE then
+		-- Failed
+		if c_func(wglDeleteContext,{peek4u(window+12)}) then end if			-- Delete The Rendering Context
+		poke4(window+12,0)													-- Zero The Rendering Context
+		if c_func(ReleaseDC,{peek4u(window+4), peek4u(window+8)}) then end if 	-- Release Our Device Context
+		poke4(window+8,0)													-- Zero The Device Context
+		if c_func(DestroyWindow,{peek4u(window+4)}) then end if				-- Destroy The Window
+		poke4(window+4,0)												-- Zero The Window Handle
+		return FALSE													-- Return False
+	end if
+
+	if c_func(ShowWindow,{peek4u(window+4), SW_NORMAL}) then end if			-- Make The Window Visible
+	poke4(window+40,TRUE)											-- Set isVisible To True
+
+	ReshapeGL(peek4u(window+24), peek4u(window+28))				-- Reshape Our GL Window
+	
+	mem_set(peek4u(window+0),0,256)							-- Clear All Keys
+
+	if c_func(QueryPerformanceFrequency,{timer}) then				-- Check To See If We Can Use Peformance Counter
+		poke4(window+44,TRUE)										-- High Resolution Is Available
+		-- Grab The Starting Tick Value
+		poke4(window+48,c_func(QueryPerformanceCounter,{timer}))
+		-- Grab The Counter Frequency
+		if c_func(QueryPerformanceFrequency,{timer}) then end if
+			-- Set The Timer Resolution 1.0f / Timer Frequency
+		poke(window+52,atom_to_float32(1.0/(peek4u(timer)+(peek4u(timer+4)*power(2,32)))))
+
+	else
+		poke4(window+48,c_func(GetTickCount,{}))				-- Get Tick Count The Old Fashioned Way
+		poke(window+52,atom_to_float32(1.0/1000.0))						-- Set Our Timer Resolution To .001f
+	end if
+
+	return TRUE													-- Window Creating Was A Success
+																	-- Initialization Will Be Done In WM_CREATE
+end function
+
+function DestroyWindowGL()							-- Destroy The OpenGL Window & Release Resources
+	if peek4u(window+4) != 0 then										-- Does The Window Have A Handle?
+		if peek4u(window+8) != 0 then									-- Does The Window Have A Device Context?
+			if peek4u(window+12) != 0 then									-- Does The Window Have A Rendering Context?
+				if c_func(wglDeleteContext,{peek4u(window+12)}) then		-- Release The Rendering Context
+					poke4(window+12,0)									-- Zero The Rendering Context
+				end if
+			end if
+			if c_func(ReleaseDC,{peek4u(window+4), peek4u(window+8)}) then end if	-- Release The Device Context
+			poke4(window+8,0)											-- Zero The Device Context
+		end if
+		if c_func(DestroyWindow,{peek4u(window+4)}) then end if			-- Destroy The Window
+		poke4(window+4,0)											-- Zero The Window Handle
+	end if
+
+	if peek4u(window+36) then								-- Is Window In Fullscreen Mode
+		if c_func(ChangeDisplaySettingsA,{NULL,0}) then end if								-- Switch Back To Desktop Resolution
+		if c_func(ShowCursor,{TRUE}) then end if					-- Show The Cursor
+	end if	
+	return TRUE														-- Return True
+end function
+
+-- Process Window Message Callbacks
+function WindowProc (atom hWnd, integer uMsg, atom wParam, atom lParam)
+atom tickCount												-- Holds Current Tick Count
+atom timer													-- Used For The Tick Counter
+atom creation
+
+	timer = allocate(8)
+	-- Get The Window Context
+	--window = c_func(GetWindowLong,{hWnd, GWL_USERDATA})
+
+	if uMsg = WM_ERASEBKGND then							-- Check To See If Windows Is Trying To Erase The Background
+			return 0													-- Return 0 (Prevents Flickering While Resizing A Window)
+
+	elsif uMsg = WM_PAINT then								-- Window Needs Updating
+		if peek4u(window+44) then										-- Are We Using High Resolution Timer
+			if c_func(QueryPerformanceCounter,{timer}) then end if 	-- Grab Current Value In Performance Counter
+			tickCount = peek4u(timer)	-- Store It In Tick Count
+		else														-- Otherwise We Grab Ticks The Old Fashioned Way
+			tickCount = c_func(GetTickCount,{})							-- Get The Tick Count
+		end if
+		-- Call Update With The New Counter Value
+		call_proc(Update_id,{((tickCount - peek4u(window+48)) * float32_to_atom(peek({window+52,4})) * 1000.0)})
+		poke4(window+48,tickCount)							-- Set Last Count To Current Count
+		call_proc(Draw_id,{})								-- Draw Our Scene
+		if c_func(SwapBuffers,{peek4u(window+8)}) then end if	-- Swap Buffers (Double Buffering)
+
+		return 0														-- Return
+
+	elsif uMsg = WM_SYSCOMMAND then												-- Intercept System Commands
+		if wParam =  SC_SCREENSAVE or										-- Screensaver Trying To Start?
+		   wParam = SC_MONITORPOWER then									-- Monitor Trying To Enter Powersave?
+				return 0												-- Prevent From Happening
+		end if													
+		return 0														-- Return
+
+ 	elsif uMsg = WM_CREATE then													-- Window Creation
+ 		creation = lParam			-- Store Window Structure Pointer
+ 		window = peek4u(creation)
+ 		if c_func(SetWindowLong,{hWnd, GWL_USERDATA, peek4u(window)}) then end if
+
+ 		return 0														-- Return
+
+	elsif uMsg =  WM_CLOSE then												-- Closing The Window
+		TerminateApplication()								-- Terminate The Application
+	return 0														-- Return
+
+	elsif uMsg = WM_SIZE then													-- Size Action Has Taken Place
+		if wParam = SIZE_MINIMIZED then									-- Was Window Minimized?
+			poke4(window+40,FALSE)							-- Set isVisible To False
+			return 0												-- Return
+
+		elsif wParam = SIZE_MAXIMIZED then									-- Was Window Maximized?
+			poke4(window+40,TRUE)							-- Set isVisible To True
+			ReshapeGL(lParam, lParam)		-- Reshape Window - LoWord=Width, HiWord=Height
+			return 0												-- Return
+
+		elsif wParam = SIZE_RESTORED then										-- Was Window Restored?
+			poke4(window+40,TRUE)							-- Set isVisible To True
+			ReshapeGL(lParam, lParam)		-- Reshape Window - LoWord=Width, HiWord=Height
+			return 0												-- Return
+		end if
+
+	elsif uMsg = WM_KEYDOWN then												-- Update Keyboard Buffers For Keys Pressed
+		if (wParam >= 0) and (wParam <= 255) then						-- Is Key (wParam) In A Valid Range?
+			poke4(peek4u(window+0)+wParam,TRUE)					-- Set The Selected Key (wParam) To True
+			return 0												-- Return
+		end if
+
+	elsif uMsg = WM_KEYUP then													-- Update Keyboard Buffers For Keys Released
+		if (wParam >= 0) and (wParam <= 255) then					-- Is Key (wParam) In A Valid Range?
+			poke4(peek4u(window+0)+wParam,FALSE)					-- Set The Selected Key (wParam) To False
+			return 0												-- Return
+		end if
+
+	elsif uMsg = WM_TOGGLEFULLSCREEN then										-- Toggle FullScreen Mode On/Off
+		if g_createFullScreen then
+			g_createFullScreen = FALSE
+		else
+			g_createFullScreen = TRUE
+		end if
+		if c_func(PostMessage,{hWnd, WM_QUIT, 0, 0}) then end if
+	end if
+
+	return c_func(DefWindowProcA,{hWnd, uMsg, wParam, lParam})					-- Pass Unhandled Messages To DefWindowProc
+end function
+
+function RegisterWindowClass(atom application)						-- Register A Window Class For This Application.
+atom windowClass, hInstance
+integer WndProcAddress, id
+    id = routine_id("WindowProc")
+    if id = -1 then
+    puts(1, "routine_id failed!\n")
+    abort(1)
+    end if
+    WndProcAddress = call_back(id)
+    hInstance = c_func(GetModuleHandle,{peek4u(application)})
+	-- Register A Window Class
+	windowClass	 = allocate(40)											-- Window Class
+	poke4(windowClass,or_all({CS_HREDRAW,CS_VREDRAW,CS_OWNDC}))	-- Redraws The Window For Any Movement / Resizing
+	poke4(windowClass+4,WndProcAddress)				-- WindowProc Handles Messages
+	poke4(windowClass+8,0)
+	poke4(windowClass+12,0)
+	poke4(windowClass+16,hInstance)				-- Set The Instance
+	poke4(windowClass+20,0)
+	poke4(windowClass+24,c_func(LoadCursorA,{NULL, IDC_ARROW}))			-- Load The Arrow Pointer
+	poke4(windowClass+28,0)				-- Class Background Brush Color
+	poke4(windowClass+32,0)
+	poke4(windowClass+36,peek4u(application+4))				-- Sets The Applications Classname
+	if c_func(RegisterClassA,{windowClass}) then end if			
+
+	return TRUE														-- Return True (Success)
+end function
+
+-- Program Entry (WinMain)
+function WinMain()
+atom application									-- Application Structure
+integer	isMessagePumpActive							-- Message Pump Active?
+atom	msg											-- Window Message Structure
+integer msg_message
+	
+	application = allocate(8)
+	msg = allocate(28)
+	-- Fill Out Application Data
+	poke4(application+4,allocate_string("OpenGL"))									-- Application Class Name
+	poke4(application,NULL)									-- Application Instance
+
+	-- Fill Out Window
+	poke4(window+16,application)							-- Window Application
+
+	-- Window Title
+	poke4(window+20,allocate_string("Lesson 42: Multiple Viewports... 2003 NeHe Productions... Building Maze!"))
+
+	poke4(window+24,1024)									-- Window Width
+	poke4(window+28,768)									-- Window Height
+	poke4(window+32,32)									-- Bits Per Pixel
+	poke4(window+36,TRUE)									-- Fullscreen? (Set To TRUE)
+
+
+	-- Ask The User If They Want To Start In FullScreen Mode? (Remove These 4 Lines If You Want To Force Fullscreen)
+	if message_box("Would You Like To Run In Fullscreen Mode?", "Start FullScreen?", MB_YESNO + MB_ICONQUESTION) = IDNO then
+		poke4(window+36,FALSE)								-- If Not, Run In Windowed Mode
+	end if
+
+	-- Register A Class For Our Window To Use
+	if RegisterWindowClass(peek4u(window+16)) = FALSE then					-- Did Registering A Class Fail?
+		-- Failure
+		if message_box("Error Registering Window Class!", "Error", MB_OK + MB_ICONEXCLAMATION) then end if
+		return -1														-- Terminate Application
+	end if
+
+	g_isProgramLooping = TRUE											-- Program Looping Is Set To TRUE
+	g_createFullScreen = peek4u(window+36)						-- g_createFullScreen Is Set To User Default
+	while g_isProgramLooping do											-- Loop Until WM_QUIT Is Received
+		-- Create A Window
+		poke4(window+36,g_createFullScreen)					-- Set Init Param Of Window Creation To Fullscreen?
+		if CreateWindowGL(window) = TRUE then						-- Was Window Creation Successful?
+			-- At This Point We Should Have A Window That Is Setup To Render OpenGL
+			if call_func(Init_id,{}) = FALSE then					-- Call User Initialization
+				-- Failure
+				TerminateApplication()							-- Close Window, This Will Handle The Shutdown
+			else														-- Otherwise (Start The Message Pump)
+				-- Initialize was a success
+				isMessagePumpActive = TRUE								-- Set isMessagePumpActive To TRUE
+				while isMessagePumpActive = TRUE do						-- While The Message Pump Is Active
+					-- Success Creating Window.  Check For Window Messages
+					if c_func(PeekMessageA,{msg, peek4u(window+4), 0, 0, PM_REMOVE}) != 0 then
+						-- Check For WM_QUIT Message
+						if peek4u(msg+4) != WM_QUIT then						-- Is The Message A WM_QUIT Message?
+							if c_func(DispatchMessageA,{msg}) then end if						-- If Not, Dispatch The Message
+						else											-- Otherwise (If Message Is WM_QUIT)
+							isMessagePumpActive = FALSE				-- Terminate The Message Pump
+						end if
+					else												-- If There Are No Messages
+						if peek4u(window+40) = FALSE then					-- If Window Is Not Visible
+							c_proc(WaitMessage,{})								-- Application Is Minimized Wait For A Message
+						end if
+					end if
+				end while														-- Loop While isMessagePumpActive == TRUE
+			end if															-- If (Initialize (...
+
+			-- Application Is Finished
+			call_proc(Deinit_id,{})											-- User Defined DeInitialization
+
+			if DestroyWindowGL() then end if									-- Destroy The Active Window
+		else															-- If Window Creation Failed
+			-- Error Creating Window
+			if message_box("Error Creating OpenGL Window", "Error", MB_OK + MB_ICONEXCLAMATION) then end if
+			g_isProgramLooping = FALSE									-- Terminate The Loop
+		end if
+	end while																	-- While (isProgramLooping)
+
+	if c_func(UnregisterClassA,{peek4u(peek4u(window+16)+4), peek4u(window+16)})	then end if	-- UnRegister Window Class
+	return 0
+end function																		-- End Of WinMain()
+
+
+if WinMain() then end if

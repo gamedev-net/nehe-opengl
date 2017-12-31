@@ -1,0 +1,51 @@
+;****************************************************************************
+;* glu.mac
+;* Copyright (C) hardCode, 1999-2000
+;****************************************************************************
+
+
+IFNDEF _GLU_WRAPPERS_MAC_
+_GLU_WRAPPERS_MAC_=1
+
+
+;==============================================================================
+_gluLookAt MACRO eyeX,eyeY,eyeZ,centerX,centerY,centerZ,upX,upY,upZ
+ glCall_d <gluLookAt>,eyeX,eyeY,eyeZ,centerX,centerY,centerZ,upX,upY,upZ
+ENDM
+
+;==============================================================================
+; (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+_gluPerspective MACRO fovy,aspect,zNear,zFar
+ glCall_d <gluPerspective>,fovy,aspect,zNear,zFar
+ENDM
+
+;==============================================================================
+; (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top);
+_gluOrtho2D MACRO left,right,bottom,top
+ glCall_d <gluOrtho2D>,left,right,bottom,top
+ENDM
+
+;==============================================================================
+; (GLdouble x, GLdouble y, GLdouble delX, GLdouble delY, GLint* viewport);
+_gluPickMatrix MACRO x,y,delX,delY,pViewport
+ push pViewport
+ glCall_d <gluPickMatrix>,x,y,delX,delY
+ENDM
+
+;==============================================================================
+; (GLdouble objX, GLdouble objY, GLdouble objZ,
+;  const GLdouble* model, const GLdouble* proj,
+;  const GLint* view, GLdouble* winX, GLdouble* winY, GLdouble* winZ)
+_gluProject MACRO objX,objY,objZ,model,proj,view,winX,winY,winZ
+ push winZ
+ push winY
+ push winX
+ push view
+ push proj
+ push model
+ glCall_d <gluProject>,objX,objY,objZ
+ENDM
+
+
+
+ENDIF ;//_GLU_WRAPPERS_MAC_

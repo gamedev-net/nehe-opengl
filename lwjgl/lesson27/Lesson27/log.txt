@@ -1,0 +1,460 @@
+JAVA PROFILE 1.0.1, created Sun Aug 08 15:32:28 2004
+
+Header for -Xhprof ASCII Output
+
+Copyright 1998 Sun Microsystems, Inc. 901 San Antonio Road, Palo Alto,
+California, 94303, U.S.A.  All Rights Reserved.
+
+WARNING!  This file format is under development, and is subject to
+change without notice.
+
+This file contains the following types of records:
+
+THREAD START
+THREAD END      mark the lifetime of Java threads
+
+TRACE           represents a Java stack trace.  Each trace consists
+                of a series of stack frames.  Other records refer to
+                TRACEs to identify (1) where object allocations have
+                taken place, (2) the frames in which GC roots were
+                found, and (3) frequently executed methods.
+
+HEAP DUMP       is a complete snapshot of all live objects in the Java
+                heap.  Following distinctions are made:
+
+                ROOT    root set as determined by GC
+                CLS     classes 
+                OBJ     instances
+                ARR     arrays
+
+SITES           is a sorted list of allocation sites.  This identifies
+                the most heavily allocated object types, and the TRACE
+                at which those allocations occurred.
+
+CPU SAMPLES     is a statistical profile of program execution.  The VM
+                periodically samples all running threads, and assigns
+                a quantum to active TRACEs in those threads.  Entries
+                in this record are TRACEs ranked by the percentage of
+                total quanta they consumed; top-ranked TRACEs are
+                typically hot spots in the program.
+
+CPU TIME	is a profile of program execution obtained by measuring
+                the time spent in individual methods (excluding the time
+                spent in callees), as well as by counting the number of
+                times each method is called. Entries in this record are
+                TRACEs ranked by the percentage of total CPU time. The
+                "count" field indicates the number of times each TRACE 
+                is invoked.
+
+MONITOR TIME    is a profile of monitor contention obtained by measuring
+		the time spent by a thread waiting to enter a monitor.
+		Entries in this record are TRACEs ranked by the percentage
+		of total monitor contention time and a brief description
+		of the monitor.  The "count" field indicates the number of 
+		times the monitor was contended at that TRACE.
+
+MONITOR DUMP	is a complete snapshot of all the monitors and threads in 
+		the System.
+
+HEAP DUMP, SITES, CPU SAMPLES|TIME and MONITOR DUMP|TIME records are generated 
+at program exit.  They can also be obtained during program execution by typing 
+Ctrl-\ (on Solaris) or by typing Ctrl-Break (on Win32).
+
+--------
+
+THREAD START (obj=2b670f0, id = 1, name="Finalizer", group="system")
+THREAD START (obj=2b671f8, id = 2, name="Reference Handler", group="system")
+THREAD START (obj=2b672d8, id = 3, name="main", group="main")
+THREAD START (obj=2b6a030, id = 4, name="HPROF CPU profiler", group="system")
+THREAD START (obj=2b6a138, id = 5, name="Signal Dispatcher", group="system")
+THREAD END (id = 3)
+THREAD START (obj=2b67320, id = 6, name="DestroyJavaVM", group="main")
+THREAD END (id = 6)
+TRACE 4:
+	<empty>
+TRACE 42:
+	org.lwjgl.opengl.GL11.glBegin(<Unknown>:Native method)
+	org.lwjgl.opengl.glu.Sphere.draw(<Unknown>:Unknown line)
+	Lesson27.render(Lesson27.java:408)
+	Lesson27.run(Lesson27.java:88)
+	Lesson27.main(Lesson27.java:80)
+TRACE 29:
+	GlObject.<init>(Lesson27.java:769)
+	Lesson27.initGLObjects(Lesson27.java:300)
+	Lesson27.initGL(Lesson27.java:240)
+	Lesson27.init(Lesson27.java:233)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 32:
+	Lesson27.initGL(Lesson27.java:271)
+	Lesson27.init(Lesson27.java:233)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 1:
+	java.lang.String.hashCode(<Unknown>:Unknown line)
+	java.util.Hashtable.get(<Unknown>:Unknown line)
+	java.util.Properties.getProperty(<Unknown>:Unknown line)
+	java.lang.System.getProperty(<Unknown>:Unknown line)
+TRACE 19:
+	org.lwjgl.opengl.Util.<clinit>(<Unknown>:Unknown line)
+	org.lwjgl.opengl.VBOTracker.<init>(<Unknown>:Unknown line)
+	org.lwjgl.opengl.VBOTracker.setCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.GLContext.useContext(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+TRACE 15:
+	java.io.WinNTFileSystem.getBooleanAttributes(<Unknown>:Native method)
+	java.io.File.exists(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$FileLoader.getResource(<Unknown>:Unknown line)
+	sun.misc.URLClassPath.getResource(<Unknown>:Unknown line)
+	java.net.URLClassLoader$1.run(<Unknown>:Unknown line)
+	java.security.AccessController.doPrivileged(<Unknown>:Native method)
+	java.net.URLClassLoader.findClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+	sun.misc.Launcher$AppClassLoader.loadClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+TRACE 14:
+	org.lwjgl.opengl.GLContext.init(<Unknown>:Native method)
+	org.lwjgl.opengl.GLContext.useContext(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 34:
+	org.lwjgl.opengl.glu.GLU.gluPerspective(<Unknown>:Unknown line)
+	Lesson27.initGL(Lesson27.java:281)
+	Lesson27.init(Lesson27.java:233)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 31:
+	Plane.<init>(Lesson27.java:754)
+	GlObject.<init>(Lesson27.java:771)
+	Lesson27.initGLObjects(Lesson27.java:300)
+	Lesson27.initGL(Lesson27.java:240)
+	Lesson27.init(Lesson27.java:233)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 5:
+	java.io.WinNTFileSystem.canonicalize0(<Unknown>:Native method)
+	java.io.Win32FileSystem.canonicalize(<Unknown>:Unknown line)
+	java.io.File.getCanonicalPath(<Unknown>:Unknown line)
+	java.io.FilePermission$1.run(<Unknown>:Unknown line)
+	java.security.AccessController.doPrivileged(<Unknown>:Native method)
+	java.io.FilePermission.init(<Unknown>:Unknown line)
+	java.io.FilePermission.<init>(<Unknown>:Unknown line)
+	sun.net.www.protocol.file.FileURLConnection.getPermission(<Unknown>:Unknown line)
+	java.net.URLClassLoader.getPermissions(<Unknown>:Unknown line)
+	sun.misc.Launcher$AppClassLoader.getPermissions(<Unknown>:Unknown line)
+TRACE 20:
+	org.lwjgl.opengl.GL11.glGetInteger(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Util.glGetInteger(<Unknown>:Unknown line)
+	org.lwjgl.opengl.VBOTracker.<init>(<Unknown>:Unknown line)
+	org.lwjgl.opengl.VBOTracker.setCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.GLContext.useContext(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+TRACE 17:
+	org.lwjgl.opengl.GLContext.useContext(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 7:
+	java.util.zip.ZipFile.getEntry(<Unknown>:Native method)
+	java.util.zip.ZipFile.getEntry(<Unknown>:Unknown line)
+	java.util.jar.JarFile.getEntry(<Unknown>:Unknown line)
+	java.util.jar.JarFile.getJarEntry(<Unknown>:Unknown line)
+	java.util.jar.JarFile.hasClassPathAttribute(<Unknown>:Unknown line)
+	java.util.jar.JavaUtilJarAccessImpl.jarFileHasClassPathAttribute(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$JarLoader.getClassPath(<Unknown>:Unknown line)
+	sun.misc.URLClassPath.getLoader(<Unknown>:Unknown line)
+	sun.misc.URLClassPath.getResource(<Unknown>:Unknown line)
+	java.net.URLClassLoader$1.run(<Unknown>:Unknown line)
+TRACE 27:
+	java.io.FileInputStream.open(<Unknown>:Native method)
+	java.io.FileInputStream.<init>(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$7.getInputStream(<Unknown>:Unknown line)
+	sun.misc.Resource.getBytes(<Unknown>:Unknown line)
+	java.net.URLClassLoader.defineClass(<Unknown>:Unknown line)
+	java.net.URLClassLoader.access$100(<Unknown>:Unknown line)
+	java.net.URLClassLoader$1.run(<Unknown>:Unknown line)
+	java.security.AccessController.doPrivileged(<Unknown>:Native method)
+	java.net.URLClassLoader.findClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+TRACE 41:
+	java.lang.ClassLoader.findBootstrapClass(<Unknown>:Native method)
+	java.lang.ClassLoader.findBootstrapClass0(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+	sun.misc.Launcher$AppClassLoader.loadClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClassInternal(<Unknown>:Unknown line)
+	org.lwjgl.input.Mouse.updateCursor(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.update(<Unknown>:Unknown line)
+	Lesson27.run(Lesson27.java:90)
+TRACE 2:
+	java.io.WinNTFileSystem.getBooleanAttributes(<Unknown>:Native method)
+	java.io.File.exists(<Unknown>:Unknown line)
+	sun.misc.FileURLMapper.exists(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$JarLoader.getJarFile(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$JarLoader.<init>(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$3.run(<Unknown>:Unknown line)
+	java.security.AccessController.doPrivileged(<Unknown>:Native method)
+	sun.misc.URLClassPath.getLoader(<Unknown>:Unknown line)
+	sun.misc.URLClassPath.getLoader(<Unknown>:Unknown line)
+	sun.misc.URLClassPath.getResource(<Unknown>:Unknown line)
+TRACE 33:
+	Lesson27.initGL(Lesson27.java:281)
+	Lesson27.init(Lesson27.java:233)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 11:
+	java.lang.ClassLoader$NativeLibrary.load(<Unknown>:Native method)
+	java.lang.ClassLoader.loadLibrary0(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadLibrary(<Unknown>:Unknown line)
+	java.lang.Runtime.loadLibrary0(<Unknown>:Unknown line)
+	java.lang.System.loadLibrary(<Unknown>:Unknown line)
+	org.lwjgl.Sys.initialize(<Unknown>:Unknown line)
+	org.lwjgl.Sys.<clinit>(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.<clinit>(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+TRACE 30:
+	GlObject.<init>(Lesson27.java:771)
+	Lesson27.initGLObjects(Lesson27.java:300)
+	Lesson27.initGL(Lesson27.java:240)
+	Lesson27.init(Lesson27.java:233)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 22:
+	sun.reflect.ReflectionFactory.newFieldAccessor(<Unknown>:Unknown line)
+	java.lang.reflect.Field.acquireFieldAccessor(<Unknown>:Unknown line)
+	java.lang.reflect.Field.getFieldAccessor(<Unknown>:Unknown line)
+	java.lang.reflect.Field.setBoolean(<Unknown>:Unknown line)
+	org.lwjgl.opengl.GLContext.determineAvailableExtensions(<Unknown>:Unknown line)
+	org.lwjgl.opengl.GLContext.useContext(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+TRACE 8:
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 23:
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 26:
+	org.lwjgl.input.Controller.nCreate(<Unknown>:Native method)
+	org.lwjgl.input.Controller.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 16:
+	java.lang.ClassLoader.defineClass0(<Unknown>:Native method)
+	java.lang.ClassLoader.defineClass(<Unknown>:Unknown line)
+	java.security.SecureClassLoader.defineClass(<Unknown>:Unknown line)
+	java.net.URLClassLoader.defineClass(<Unknown>:Unknown line)
+	java.net.URLClassLoader.access$100(<Unknown>:Unknown line)
+	java.net.URLClassLoader$1.run(<Unknown>:Unknown line)
+	java.security.AccessController.doPrivileged(<Unknown>:Native method)
+	java.net.URLClassLoader.findClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+	sun.misc.Launcher$AppClassLoader.loadClass(<Unknown>:Unknown line)
+TRACE 38:
+	org.lwjgl.opengl.GL11.glVertex3f(<Unknown>:Native method)
+	Lesson27.castShadow(Lesson27.java:669)
+	Lesson27.render(Lesson27.java:401)
+	Lesson27.run(Lesson27.java:88)
+	Lesson27.main(Lesson27.java:80)
+TRACE 28:
+	Lesson27.initGLObjects(Lesson27.java:300)
+	Lesson27.initGL(Lesson27.java:240)
+	Lesson27.init(Lesson27.java:233)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 39:
+	org.lwjgl.input.Mouse.updateCursor(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.update(<Unknown>:Unknown line)
+	Lesson27.run(Lesson27.java:90)
+	Lesson27.main(Lesson27.java:80)
+TRACE 24:
+	org.lwjgl.input.Mouse.nCreate(<Unknown>:Native method)
+	org.lwjgl.input.Mouse.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 37:
+	org.lwjgl.opengl.GL11.glVertex3f(<Unknown>:Native method)
+	Lesson27.castShadow(Lesson27.java:668)
+	Lesson27.render(Lesson27.java:401)
+	Lesson27.run(Lesson27.java:88)
+	Lesson27.main(Lesson27.java:80)
+TRACE 35:
+	org.lwjgl.opengl.GL11.glNormal3f(<Unknown>:Native method)
+	org.lwjgl.opengl.glu.Sphere.draw(<Unknown>:Unknown line)
+	Lesson27.render(Lesson27.java:364)
+	Lesson27.run(Lesson27.java:88)
+	Lesson27.main(Lesson27.java:80)
+TRACE 9:
+	org.lwjgl.opengl.Window.<clinit>(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 40:
+	org.lwjgl.Display.init(<Unknown>:Native method)
+	org.lwjgl.Display.<clinit>(<Unknown>:Unknown line)
+	org.lwjgl.input.Mouse.updateCursor(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.update(<Unknown>:Unknown line)
+	Lesson27.run(Lesson27.java:90)
+	Lesson27.main(Lesson27.java:80)
+TRACE 36:
+	org.lwjgl.opengl.GL11.glBegin(<Unknown>:Native method)
+	Lesson27.castShadow(Lesson27.java:665)
+	Lesson27.render(Lesson27.java:401)
+	Lesson27.run(Lesson27.java:88)
+	Lesson27.main(Lesson27.java:80)
+TRACE 12:
+	org.lwjgl.opengl.Window.nCreate(<Unknown>:Native method)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 21:
+	org.lwjgl.opengl.GL11.nglGetIntegerv(<Unknown>:Native method)
+	org.lwjgl.opengl.GL11.glGetInteger(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Util.glGetInteger(<Unknown>:Unknown line)
+	org.lwjgl.opengl.VBOTracker.<init>(<Unknown>:Unknown line)
+	org.lwjgl.opengl.VBOTracker.setCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.GLContext.useContext(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+TRACE 43:
+	org.lwjgl.opengl.Window.nDestroy(<Unknown>:Native method)
+	org.lwjgl.opengl.Window.destroy(<Unknown>:Unknown line)
+	Lesson27.cleanup(Lesson27.java:420)
+	Lesson27.run(Lesson27.java:92)
+	Lesson27.main(Lesson27.java:80)
+TRACE 13:
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 18:
+	org.lwjgl.opengl.VBOTracker.<init>(<Unknown>:Unknown line)
+	org.lwjgl.opengl.VBOTracker.setCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.GLContext.useContext(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.makeCurrent(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+TRACE 10:
+	org.lwjgl.Sys.initialize(<Unknown>:Unknown line)
+	org.lwjgl.Sys.<clinit>(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.<clinit>(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 6:
+	java.util.zip.ZipFile.open(<Unknown>:Native method)
+	java.util.zip.ZipFile.<init>(<Unknown>:Unknown line)
+	java.util.jar.JarFile.<init>(<Unknown>:Unknown line)
+	java.util.jar.JarFile.<init>(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$JarLoader.getJarFile(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$JarLoader.<init>(<Unknown>:Unknown line)
+	sun.misc.URLClassPath$3.run(<Unknown>:Unknown line)
+	java.security.AccessController.doPrivileged(<Unknown>:Native method)
+	sun.misc.URLClassPath.getLoader(<Unknown>:Unknown line)
+	sun.misc.URLClassPath.getLoader(<Unknown>:Unknown line)
+TRACE 25:
+	org.lwjgl.input.Keyboard.nCreate(<Unknown>:Native method)
+	org.lwjgl.input.Keyboard.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.createWindow(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	org.lwjgl.opengl.Window.create(<Unknown>:Unknown line)
+	Lesson27.createWindow(Lesson27.java:225)
+	Lesson27.init(Lesson27.java:229)
+	Lesson27.run(Lesson27.java:85)
+	Lesson27.main(Lesson27.java:80)
+TRACE 3:
+	java.io.FileInputStream.readBytes(<Unknown>:Native method)
+	java.io.FileInputStream.read(<Unknown>:Unknown line)
+	sun.misc.Resource.getBytes(<Unknown>:Unknown line)
+	java.net.URLClassLoader.defineClass(<Unknown>:Unknown line)
+	java.net.URLClassLoader.access$100(<Unknown>:Unknown line)
+	java.net.URLClassLoader$1.run(<Unknown>:Unknown line)
+	java.security.AccessController.doPrivileged(<Unknown>:Native method)
+	java.net.URLClassLoader.findClass(<Unknown>:Unknown line)
+	java.lang.ClassLoader.loadClass(<Unknown>:Unknown line)
+	sun.misc.Launcher$AppClassLoader.loadClass(<Unknown>:Unknown line)
+CPU SAMPLES BEGIN (total = 635) Sun Aug 08 15:32:39 2004
+rank   self  accum   count trace method
+   1 29.92% 29.92%     190    12 org.lwjgl.opengl.Window.nCreate
+   2 24.09% 54.02%     153    37 org.lwjgl.opengl.GL11.glVertex3f
+   3 18.43% 72.44%     117    38 org.lwjgl.opengl.GL11.glVertex3f
+   4  5.35% 77.80%      34    36 org.lwjgl.opengl.GL11.glBegin
+   5  4.25% 82.05%      27    24 org.lwjgl.input.Mouse.nCreate
+   6  4.25% 86.30%      27     6 java.util.zip.ZipFile.open
+   7  3.31% 89.61%      21    15 java.io.WinNTFileSystem.getBooleanAttributes
+   8  3.15% 92.76%      20     3 java.io.FileInputStream.readBytes
+   9  2.20% 94.96%      14    25 org.lwjgl.input.Keyboard.nCreate
+  10  0.94% 95.91%       6    21 org.lwjgl.opengl.GL11.nglGetIntegerv
+  11  0.79% 96.69%       5     7 java.util.zip.ZipFile.getEntry
+  12  0.47% 97.17%       3    27 java.io.FileInputStream.open
+  13  0.47% 97.64%       3    14 org.lwjgl.opengl.GLContext.init
+  14  0.31% 97.95%       2    43 org.lwjgl.opengl.Window.nDestroy
+  15  0.31% 98.27%       2    35 org.lwjgl.opengl.GL11.glNormal3f
+  16  0.31% 98.58%       2    16 java.lang.ClassLoader.defineClass0
+  17  0.16% 98.74%       1     2 java.io.WinNTFileSystem.getBooleanAttributes
+  18  0.16% 98.90%       1    41 java.lang.ClassLoader.findBootstrapClass
+  19  0.16% 99.06%       1    11 java.lang.ClassLoader$NativeLibrary.load
+  20  0.16% 99.21%       1     5 java.io.WinNTFileSystem.canonicalize0
+  21  0.16% 99.37%       1    22 sun.reflect.ReflectionFactory.newFieldAccessor
+  22  0.16% 99.53%       1     1 java.lang.String.hashCode
+  23  0.16% 99.69%       1    42 org.lwjgl.opengl.GL11.glBegin
+  24  0.16% 99.84%       1    26 org.lwjgl.input.Controller.nCreate
+  25  0.16% 100.00%       1    32 Lesson27.initGL
+CPU SAMPLES END

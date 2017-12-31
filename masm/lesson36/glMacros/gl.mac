@@ -1,0 +1,711 @@
+;****************************************************************************
+;* gl.mac
+;* Copyright (C) hardCode, 1999-2000
+;****************************************************************************
+
+
+IFNDEF _OPENGL_WRAPPERS_MAC_
+_OPENGL_WRAPPERS_MAC_=1
+
+_glAccum MACRO op,val
+ gl_fpush val
+ push op
+ call glAccum
+ENDM
+
+_glAlphaFunc MACRO func,ref
+ gl_fpush ref
+ push func
+ call glAlphaFunc
+ENDM
+
+;(GLsizei n,const GLuint* textures,GLboolean* residences)
+; OUT: GLboolean
+_glAreTexturesResident MACRO n,textures,residences
+ invoke glAreTexturesResident,n,textures,residences
+ENDM
+
+; (GLint i)
+_glArrayElement MACRO i
+ invoke glArrayElement,i
+ENDM
+
+; (GLenum mode)
+_glBegin MACRO mode
+ invoke glBegin,mode
+ENDM
+
+; (GLenum target,GLuint texture)
+_glBindTexture MACRO target,texture
+ invoke glBindTexture,target,texture
+ENDM
+
+
+; (GLsizei width,GLsizei height,GLfloat xorig,GLfloat yorig,
+;  GLfloat xmove,GLfloat ymove,const GLubyte* bitmap)
+_glBitmap MACRO width,height,xorig,yorig,xmove,ymove,bitmap
+ push bitmap
+ gl_fpush ymove
+ gl_fpush xmove
+ gl_fpush yorig
+ gl_fpush xorig
+ gl_fpush height
+ gl_fpush width
+ call glBitmap
+ENDM
+
+; (GLenum sfactor,GLenum dfactor)
+_glBlendFunc MACRO sfactor,dfactor
+ invoke glBlendFunc,sfactor,dfactor
+ENDM
+
+; (GLuint list)
+_glCallList MACRO list
+ invoke glCallList,list
+ENDM
+
+; (GLsizei n, GLenum type, const GLvoid* lists)
+_glCallLists MACRO n,type,lists
+ invoke glCallLists,n,type,lists
+ENDM
+
+; (GLbitfield mask)
+_glClear MACRO mask
+ invoke glClear,mask
+ENDM
+
+; (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+_glClearAccum MACRO r,g,b,a
+ glCall_f <glClearAccum>,r,g,b,a
+ENDM
+
+; (GLclampf red,GLclampf green,GLclampf blue,GLclampf alpha)
+_glClearColor MACRO r,g,b,a
+ glCall_f <glClearColor>,r,g,b,a
+ENDM
+
+; (GLclampd depth)
+_glClearDepth MACRO depth
+ glCall_d <glClearDepth>,depth
+ENDM
+
+; (GLfloat c)
+_glClearIndex MACRO c
+ glCall_f <glClearIndex>,c
+ENDM
+
+; (GLint s)
+_glClearStencil MACRO s
+ invoke glClearStencil,s
+ENDM
+
+; (GLenum plane, const GLdouble* equation)
+_glClipPlane MACRO plane,equation
+ invoke glClipPlane,plane,equation
+ENDM
+
+; (GLbyte red, GLbyte green, GLbyte blue)
+_glColor3b MACRO r,g,b
+ invoke glColor3b,r,g,b
+ENDM
+
+; (const GLbyte* v)
+_glColor3bv MACRO v
+ invoke glColor3bv,v
+ENDM
+
+; (GLdouble red, GLdouble green, GLdouble blue)
+_glColor3d MACRO R,G,B
+ glCall_d <glColor3d>,R,G,B
+ENDM
+
+; (const GLdouble* v)
+_glColor3dv MACRO v
+ invoke glColor3dv,v
+ENDM
+
+; (GLfloat red, GLfloat green, GLfloat blue)
+_glColor3f MACRO R,G,B
+ glCall_f <glColor3f>,R,G,B
+ENDM
+
+; (const GLfloat* v)
+_glColor3fv MACRO v
+ invoke glColor3fv,v
+ENDM
+
+; (GLint red, GLint green, GLint blue)
+_glColor3i MACRO r,g,b
+ invoke glColor3i,r,g,b
+ENDM
+
+; (const GLint* v)
+_glColor3iv MACRO v
+ invoke glColor3iv,v
+ENDM
+
+; (GLshort red, GLshort green, GLshort blue)
+_glColor3s MACRO r,g,b
+ invoke glColor3s,r,g,b
+ENDM
+
+; (const GLshort* v)
+_glColor3sv MACRO v
+ invoke glColor3sv,v
+ENDM
+
+; (GLubyte red, GLubyte green, GLubyte blue)
+_glColor3ub MACRO r,g,b
+ invoke glColor3ub,r,g,b
+ENDM
+
+; (const GLubyte* v)
+_glColor3ubv MACRO v
+ invoke glColor3ubv,v
+ENDM
+
+; (GLuint red, GLuint green, GLuint blue)
+_glColor3ui MACRO r,g,b
+ invoke glColor3ui,r,g,b
+ENDM
+
+; (const GLuint* v)
+_glColor3uiv MACRO v
+ invoke glColor3uiv,v
+ENDM
+
+; (GLushort red, GLushort green, GLushort blue)
+_glColor3us MACRO r,g,b
+ invoke glColor3us,r,g,b
+ENDM
+
+; (const GLushort* v)
+_glColor3usv MACRO v
+ invoke glColor3usv,v
+ENDM
+
+; (GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha)
+_glColor4b MACRO r,g,b,a
+ invoke glColor4b,r,g,b,a
+ENDM
+
+; (const GLbyte* v)
+_glColor4bv MACRO v
+ invoke glColor4bv,v
+ENDM
+
+; (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha)
+_glColor4d MACRO r,g,b,a
+ glCall_d <glColor4d>,r,g,b,a
+ENDM
+
+; (const GLdouble* v)
+_glColor4dv MACRO v
+ invoke glColor4dv,v
+ENDM
+
+; (GLfloat red,GLfloat green,GLfloat blue,GLfloat alpha)
+_glColor4f MACRO r,g,b,a
+ glCall_f <glColor4f>,r,g,b,a
+ENDM
+
+; (const GLfloat* v)
+_glColor4fv MACRO v
+ invoke glColor4fv,v
+ENDM
+
+; (GLint red, GLint green, GLint blue, GLint alpha)
+_glColor4i MACRO r,g,b,a
+ invoke glColor4i,r,g,b,a
+ENDM
+
+; (const GLint* v)
+_glColor4iv MACRO v
+ invoke glColor4iv,v
+ENDM
+
+; (GLshort red, GLshort green, GLshort blue, GLshort alpha)
+_glColor4s MACRO r,g,b,a
+ invoke glColor4s,r,g,b,a
+ENDM
+
+; (const GLshort* v)
+_glColor4sv MACRO v
+ invoke glColor4sv,v
+ENDM
+
+; (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
+_glColor4ub MACRO r,g,b,a
+ invoke glColor4ub,r,g,b,a
+ENDM
+
+; (const GLubyte* v)
+_glColor4ubv MACRO v
+ invoke glColor4ubv,v
+ENDM
+
+; (GLuint red, GLuint green, GLuint blue, GLuint alpha)
+_glColor4ui MACRO r,g,b,a
+ invoke glColor4ui,r,g,b,a
+ENDM
+
+; (const GLuint* v)
+_glColor4uiv MACRO v
+ invoke glColor4uiv,v
+ENDM
+
+; (GLushort red, GLushort green, GLushort blue, GLushort alpha)
+_glColor4us MACRO r,g,b,a
+ invoke glColor4us,r,g,b,a
+ENDM
+
+; (const GLushort* v)
+_glColor4usv MACRO v
+ invoke glColor4usv,v
+ENDM
+
+; (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+_glColorMask MACRO r,g,b,a
+ invoke glColorMask,r,g,b,a
+ENDM
+
+; (GLenum face, GLenum mode)
+_glColorMaterial MACRO face,mode
+ invoke glColorMaterial,face,mode
+ENDM
+
+; (GLint size, GLenum type, GLsizei stride, const GLvoid* pointer)
+_glColorPointer MACRO size,type,stride,ptr
+ invoke glColorPointer,size,type,stride,ptr
+ENDM
+
+; (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
+_glCopyPixels MACRO x,y,w,h,type
+ invoke glCopyPixels,x,y,w,h,type
+ENDM
+
+; (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
+_glCopyTexImage1D MACRO target,level,internalFormat,x,y,w,border
+ invoke glCopyTexImage1D,target,level,internalFormat,x,y,w,border
+ENDM
+
+; (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+_glCopyTexImage2D MACRO target,level,internalFormat,x,y,w,h,border
+ invoke glCopyTexImage2D,target,level,internalFormat,x,y,w,h,border
+ENDM
+
+; (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width)
+_glCopyTexSubImage1D MACRO target,level,xoffset,x,y,width
+ invoke glCopyTexSubImage1D,target,level,xoffset,x,y,width
+ENDM
+
+; (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
+_glCopyTexSubImage2D MACRO target,level,xoffset,yoffset,x,y,width,height
+ invoke glCopyTexSubImage2D,target,level,xoffset,yoffset,x,y,width,height
+ENDM
+
+; (GLenum mode)
+_glCullFace MACRO mode
+ invoke glCullFace,mode
+ENDM
+
+; (GLuint list, GLsizei range)
+_glDeleteLists MACRO list,range
+ invoke glDeleteLists,list,range
+ENDM
+
+; (GLsizei n, const GLuint* textures)
+_glDeleteTextures MACRO n,textures
+ invoke glDeleteTextures,n,textures
+ENDM
+
+; (GLenum func)
+_glDepthFunc MACRO func
+ invoke glDepthFunc,func
+ENDM
+
+; (GLboolean flag)
+_glDepthMask MACRO flag
+ invoke glDepthMask,flag
+ENDM
+
+; (GLclampd zNear, GLclampd zFar)
+_glDepthRange MACRO zNear,zFar
+ glCall_d <glDepthRange>,zNear,zFar
+ENDM
+
+; (GLenum cap)
+_glDisable MACRO cap
+ invoke glDisable,cap
+ENDM
+
+
+; (GLsizei range)
+_glGenLists  MACRO range
+ invoke glGenLists,range
+ENDM
+
+
+
+
+
+_glFrustum MACRO l,r,b,t,zNear,zFar
+ glCall_d <glFrustum>,l,r,b,t,zNear,zFar
+ENDM
+
+
+_glOrtho MACRO l,r,b,t,zNear,zFar
+ glCall_d <glOrtho>,l,r,b,t,zNear,zFar
+ENDM
+
+
+
+
+
+_glTranslatef MACRO x,y,z
+ glCall_f <glTranslatef>,x,y,z
+ENDM
+
+
+_glNormal3f MACRO nx,ny,nz
+ glCall_f <glNormal3f>,nx,ny,nz
+ENDM
+
+_glNormal3d MACRO nx,ny,nz
+ glCall_d <glNormal3d>,nx,ny,nz
+ENDM
+
+_glVertex3f MACRO x,y,z
+ glCall_f <glVertex3f>,x,y,z
+ENDM
+
+_glVertex2f MACRO x,y
+ glCall_f <glVertex2f>,x,y
+ENDM
+
+
+
+_glTexCoord2f MACRO u,v
+ glCall_f <glTexCoord2f>,u,v
+ENDM
+
+_glTexEnvfv MACRO target,pname,lpparam
+ invoke glTexEnvfv,target,pname,lpparam
+ENDM
+
+_glTexEnvf MACRO target,pname,param
+ gl_fpush param
+ push pname
+ push target
+ call glTexEnvf 
+ENDM
+
+_glTexEnvi MACRO target,pname,param
+ push param
+ push pname
+ push target
+ call glTexEnvf 
+ENDM
+
+_glTexParameterf MACRO target,pname,param
+ gl_fpush param
+ push pname
+ push target
+ call glTexParameterf
+ENDM
+
+_glTexParameteri MACRO target,pname,param
+ push param
+ push pname
+ push target
+ call glTexParameteri
+ENDM
+
+
+_glEnd MACRO
+ invoke glEnd
+ENDM
+
+_glEndList MACRO
+ invoke glEndList
+ENDM
+
+_glEnable MACRO cap
+ invoke glEnable,cap
+ENDM
+
+
+
+
+_glMatrixMode MACRO mode
+ invoke glMatrixMode,mode
+ENDM
+
+_glShadeModel MACRO mode
+ invoke glShadeModel,mode
+ENDM
+
+_glLoadIdentity MACRO
+ invoke glLoadIdentity
+ENDM
+
+_glFrontFace MACRO mode
+ invoke glFrontFace,mode
+ENDM
+
+_glViewport MACRO x,y,w,h
+ push h
+ push w
+ push y
+ push x
+ call glViewport
+ENDM
+
+
+
+
+
+
+; (GLdouble u)
+_glEvalCoord1d MACRO u
+ glCall_d <glEvalCoord1d>,u
+ENDM
+
+; (GLfloat u)
+_glEvalCoord1f MACRO u
+ glCall_f <glEvalCoord1f>,u
+ENDM
+
+; (GLdouble u, GLdouble v)
+_glEvalCoord2d MACRO u,v
+ glCall_d <glEvalCoord2d>,u,v
+ENDM
+
+; (GLfloat u, GLfloat v)
+_glEvalCoord2f MACRO u,v
+ glCall_f <glEvalCoord2f>u,v
+ENDM
+
+; (GLenum pname, GLfloat param)
+_glFogf MACRO pname,param
+ gl_fpush param
+ push pname
+ call glFogf
+ENDM
+
+
+; (GLdouble c)
+_glIndexd MACRO c
+ glCall_d <glIndexd>,c
+ENDM
+
+; (GLfloat c)
+_glIndexf MACRO c
+ glCall_f <glIndexf>,c
+ENDM
+
+; (GLenum pname, GLfloat param)
+_glLightModelf MACRO pname,param
+ gl_fpush param
+ push pname
+ call glLightModelf
+ENDM
+
+; (GLenum light, GLenum pname, GLfloat param)
+_glLightf MACRO light,pname,param
+ gl_fpush param
+ push pname
+ push light
+ call glLightf
+ENDM
+
+
+; (GLfloat width)
+_glLineWidth MACRO width
+ glCall_f <glLineWidth>,width
+ENDM
+
+; (GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble* points)
+_glMap1d MACRO target,u1,u2,stride,order,points
+ push points
+ push order
+ push stride
+ gl_dpush u2
+ gl_dpush u1
+ _GL_DPUSH_FIX
+ push target
+ call glMap1d
+ENDM
+
+; (GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat* points)
+_glMap1f MACRO target,u1,u2,stride,order,points
+ push points
+ push order
+ push stride
+ gl_fpush u2
+ gl_fpush u1
+ push target
+ call glMap1f
+ENDM
+
+; (GLenum target, GLdouble u1, GLdouble u2, GLint ustride, GLint uorder, GLdouble v1, GLdouble v2, GLint vstride, GLint vorder, const GLdouble* points)
+_glMap2d MACRO target,u1,u2,ustride,uorder,v1,v2,vstride,vorder,points
+ push points
+ push vorder
+ push vstride
+ gl_dpush v2
+ gl_dpush v1
+ _GL_DPUSH_FIX
+ push uorder
+ push ustride
+ gl_dpush u2
+ gl_dpush u1
+ _GL_DPUSH_FIX
+ push target
+ call glMap2d
+ENDM
+
+; (GLenum target, GLfloat u1, GLfloat u2, GLint ustride, GLint uorder, GLfloat v1, GLfloat v2, GLint vstride, GLint vorder, const GLfloat* points);
+_glMap2f MACRO target,u1,u2,ustride,uorder,v1,v2,vstride,vorder,points
+ push points
+ push vorder
+ push vstride
+ gl_fpush v2
+ gl_fpush v1
+ push uorder
+ push ustride
+ gl_fpush u2
+ gl_fpush u1
+ push target
+ call glMap2f
+ENDM
+
+; (GLint un, GLdouble u1, GLdouble u2)
+_glMapGrid1d MACRO un,u1,u2
+ gl_dpush u2
+ gl_dpush u1
+ _GL_DPUSH_FIX
+ push un
+ call glMapGrid1d
+ENDM
+
+; (GLint un, GLfloat u1, GLfloat u2)
+_glMapGrid1f MACRO un,u1,u2
+ gl_fpush u2
+ gl_fpush u1
+ push un
+ call glMapGrid1f
+ENDM
+
+; (GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2)
+_glMapGrid2d MACRO un,u1,u2,vn,v1,v2
+ gl_dpush v2
+ gl_dpush v1
+ _GL_DPUSH_FIX
+ push vn
+ gl_dpush u2
+ gl_dpush u1
+ _GL_DPUSH_FIX
+ push un
+ call glMapGrid2d
+ENDM
+
+; (GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2)
+_glMapGrid2f MACRO un,u1,u2,vn,v1,v2
+ gl_fpush v2
+ gl_fpush v1
+ push vn
+ gl_fpush u2
+ gl_fpush u1
+ push un
+ call glMapGrid2f
+ENDM
+
+
+; (GLenum face, GLenum pname, GLfloat param)
+_glMaterialf MACRO face,pname,param
+ gl_fpush param
+ push pname
+ push face
+ call glMaterialf
+ENDM
+
+
+; (GLfloat xfactor, GLfloat yfactor)
+_glPixelZoom MACRO xfactor,yfactor
+ glCall_f <glPixelZoom>,xfactor,yfactor
+ENDM
+
+; (GLfloat size)
+_glPointSize MACRO size
+ glCall_f <glPointSize>,size
+ENDM
+
+; (GLfloat factor, GLfloat units)
+_glPolygonOffset MACRO factor,units
+ glCall_f <glPolygonOffset>,factor,units
+ENDM
+
+; (GLdouble x, GLdouble y)
+_glRasterPos2d MACRO x,y
+ glCall_d <glRasterPos2d>,x,y
+ENDM
+
+; (GLfloat x, GLfloat y)
+_glRasterPos2f MACRO x,y
+ glCall_f <glRasterPos2f>,x,y
+ENDM
+
+; (GLdouble x, GLdouble y, GLdouble z)
+_glRasterPos3d MACRO x,y,z
+ glCall_d <glRasterPos3d>,x,y,z
+ENDM
+
+; (GLfloat x, GLfloat y, GLfloat z)
+_glRasterPos3f MACRO x,y,z
+ glCall_f <glRasterPos3f>,x,y,z
+ENDM
+
+; (GLdouble x, GLdouble y, GLdouble z, GLdouble w)
+_glRasterPos4d MACRO x,y,z,w
+ glCall_d <glRasterPos4d>,x,y,z,w
+ENDM
+
+; (GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+_glRasterPos4f MACRO x,y,z,w
+ glCall_f <glRasterPos4f>,x,y,z,w
+ENDM
+
+; (GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2)
+_glRectd MACRO x1,y1,x2,y2
+ glCall_d <glRectd>,x1,y1,x2,y2
+ENDM
+
+; (GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
+_glRectf MACRO x1,y1,x2,y2
+ glCall_f <glRectf>,x1,y1,x2,y2
+ENDM
+
+; (GLdouble angle, GLdouble x, GLdouble y, GLdouble z)
+_glRotated MACRO angle,x,y,z
+ glCall_d <glRotated>,angle,x,y,z
+ENDM
+
+; (GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
+_glRotatef MACRO angle,x,y,z
+ glCall_f <glRotatef>,angle,x,y,z
+ENDM
+ 
+; (GLdouble x, GLdouble y, GLdouble z)
+_glScaled MACRO x,y,z
+ glCall_d <glScaled>,x,y,z
+ENDM
+
+; (GLfloat x, GLfloat y, GLfloat z)
+_glScalef MACRO x,y,z
+ glCall_f <glScalef>,x,y,z
+ENDM
+
+ 
+
+ENDIF ;// _OPENGL_WRAPPERS_MAC_

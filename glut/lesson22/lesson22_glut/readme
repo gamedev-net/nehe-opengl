@@ -1,0 +1,49 @@
+
+Project Name: NeHe GL Glut Framework
+
+Project Description: Framework for making simple OpenGL Apps
+
+Author  Name:	Bruce Barrera (aka SINNER)
+Contact     : 	sinner@opengl.com.br
+
+
+Dir structure:
+==============
+\msvc++\ - contains all msvc++ project files
+\linux\  - contains linux makefile and object files
+\devcpp\ - contains devcpp++ project files, object files and makefiles
+\exe\    - holds the final executable files for all plataforms
+\src\    - obviously, contains the source files ;-)
+
+
+Build instructions:
+===================
+MSVC++
+Open the .dsw file located in \msvc++\ dir. Press F5 to compile and run.
+
+DEVCPP++
+Open the .dev file located in \devcpp\ dir. Press F9 to compile and run the program.
+
+LINUX
+Go to console and under the \linux\ dir type 'make' and press enter. To run the program, switch to the \exe\ dir and type './nehegl_glut' to run the program.
+
+or if you have the MingW Studio (www.parinya.ca)
+
+start the IDE and open the .msp project file in the src dir. Just press F5 and watch it go!
+
+
+===
+
+
+ This framework was done using the GLUT library and
+ can be easily ported between Win32, GNU/Linux and Mac OS X.
+
+ This was created in a manner, so beginners need only to change
+ the content of a single function and get an OGL application
+ running as fast as they can imagine!
+
+
+Hosted Web Site: http://nehe.gamedev.net
+
+Thanks to NeHe for all of his tutorial over these years, keep up
+the good work, Jeff !!!

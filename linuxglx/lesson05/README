@@ -1,0 +1,30 @@
+Readme for NeHe's OpenGL Tutorial Lesson 05 Linux/GLX port
+==========================================================
+
+Compilation:
+
+make
+
+Running:
+
+./lesson05
+
+Requirements:
+
+- OpenGL headers and libraries 
+- Xserver with GLX and XF86VidMode extensions (I used version 4.0.1)
+- gcc (any other ANSI C compiler should do it too; I used gcc 2.95.2)
+
+Known bugs/issues:
+
+- does not stop drawing even if iconified (though it is not visible)
+- does not explicitly select color depth
+
+Contact:
+
+If you have any problems, comments, or have useful hints, 
+email to Mihael.Vrbanec@stud.uni-karlsruhe.de
+
+Credits:
+Jeff Molofee (nehe@connect.ab.ca) for writing the tutorials.
+Mihael Vrbanec for the port to Linux/GLX and ANSI C

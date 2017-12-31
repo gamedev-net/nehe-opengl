@@ -1,0 +1,50 @@
+                 Lesson 19 (modified for the Irix OS)
+                       by Dimitrios Christopoulos
+                          (christop@fhw.gr)
+        ***************************************************************
+        Compiles under Irix using the CC compiler. Just tupe make.
+        The code uses GLUT for the dirty work therefore
+        it should be easy to port it to any other platform glut supports.
+        The texture (rgb) files loading source is taken from the Advanced
+        OGL Siggraph 99 source code.  
+ 
+        The texture source code is in texture.c and texture.h
+        For using them in your own code:
+        The following libs are needed
+	LIBS = -lglut -lGLw -lGLU -lGL -lXmu -lXt -lX11 -lm
+        
+	sample: sample.c texture.h texture.c
+		cc $(CFLAGS) -o $@ sample.c texture.c $(LIBS)
+
+	To use the code in your program is easy. First put in
+	the header file:
+
+	#include "texture.h"
+
+	Then just make the following call:
+
+	unsigned *teximage; /* pointer to texture data */
+	int texwid, texht; /* dimensions of texture that was read */
+	int texcomps; /* number of components in external format */
+
+	teximage = read_texture(filepath, &texwid, &texht, &texcomps);
+
+	Now you can load the texture very easily:
+
+	glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texwid, texht, 0,
+                    GL_RGBA, GL_UNSIGNED_BYTE, teximage);
+       *******************************************************************
+
+       The additional changes made are that a constant explosion and a 
+       spin me crazy mode was added.
+       Press <e> and <c> respectively to activate and deactivate.(Slick effects :))
+       Otherwise the keys functions are the same.
+       
+       Suggestion, put up trippy music,
+       run the program, press <e>, <enter>, <c> (in any order)
+       Dream away........
+
+      
+      
+
+	 

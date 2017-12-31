@@ -1,0 +1,5 @@
+;this def are not in windows.inc
+
+DM_BITSPERPEL       = 00040000h
+DM_PELSWIDTH        = 00080000h
+DM_PELSHEIGHT       = 00100000h

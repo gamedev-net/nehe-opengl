@@ -1,0 +1,32 @@
+# Project: Lesson35
+# Makefile created by Dev-C++ 4.9.8.0
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = Lesson35.o NeHeGL.o $(RES)
+LINKOBJ  = Lesson35.o NeHeGL.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib" -mwindows -lopengl32 -lglu32 libvfw_avi32.a libvfw_ms32.a 
+INCS =  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/include/c++"  -I"C:/Dev-Cpp/include/c++/mingw32"  -I"C:/Dev-Cpp/include/c++/backward"  -I"C:/Dev-Cpp/include" 
+BIN  = Lesson35.exe
+CXXFLAGS = $(CXXINCS)  -O3
+CFLAGS = $(INCS)  -O3
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson35.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(LINKOBJ)
+	$(CPP) $(LINKOBJ) -o "Lesson35.exe" $(LIBS)
+
+Lesson35.o: Lesson35.cpp
+	$(CPP) -c Lesson35.cpp -o Lesson35.o $(CXXFLAGS)
+
+NeHeGL.o: NeHeGL.cpp
+	$(CPP) -c NeHeGL.cpp -o NeHeGL.o $(CXXFLAGS)

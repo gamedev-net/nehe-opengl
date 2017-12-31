@@ -1,0 +1,44 @@
+# Project: Quaternion_Camera_Class
+# Makefile created by Dev-C++ 4.9.8.3
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = glCamera.o glHeightMap.o glPoint.o glQuaternion.o glVector.o quaternion_camera_class.o $(RES)
+LINKOBJ  = glCamera.o glHeightMap.o glPoint.o glQuaternion.o glVector.o quaternion_camera_class.o $(RES)
+LIBS =  -L"E:/DEV-CPP/lib" -mwindows -lopengl32 -lglu32 -lglaux -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32
+INCS =  -I"E:/DEV-CPP/include" 
+CXXINCS =  -I"E:/DEV-CPP/include/c++"  -I"E:/DEV-CPP/include/c++/mingw32"  -I"E:/DEV-CPP/include/c++/backward"  -I"E:/DEV-CPP/include" 
+BIN  = Quaternion_Camera_Class.exe
+CXXFLAGS = $(CXXINCS)-D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS  -fexpensive-optimizations -O3
+CFLAGS = $(INCS)-D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS  -fexpensive-optimizations -O3
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Quaternion_Camera_Class.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(LINKOBJ)
+	$(CPP) $(LINKOBJ) -o "Quaternion_Camera_Class.exe" $(LIBS)
+
+glCamera.o: glCamera.cpp
+	$(CPP) -c glCamera.cpp -o glCamera.o $(CXXFLAGS)
+
+glHeightMap.o: glHeightMap.cpp
+	$(CPP) -c glHeightMap.cpp -o glHeightMap.o $(CXXFLAGS)
+
+glPoint.o: glPoint.cpp
+	$(CPP) -c glPoint.cpp -o glPoint.o $(CXXFLAGS)
+
+glQuaternion.o: glQuaternion.cpp
+	$(CPP) -c glQuaternion.cpp -o glQuaternion.o $(CXXFLAGS)
+
+glVector.o: glVector.cpp
+	$(CPP) -c glVector.cpp -o glVector.o $(CXXFLAGS)
+
+quaternion_camera_class.o: quaternion_camera_class.cpp
+	$(CPP) -c quaternion_camera_class.cpp -o quaternion_camera_class.o $(CXXFLAGS)

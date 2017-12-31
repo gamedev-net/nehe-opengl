@@ -1,0 +1,6 @@
+;from this tut, i use the new include file of Hardcode, so
+;this file is different from other tuts.
+
+DM_BITSPERPEL       = 00040000h
+DM_PELSWIDTH        = 00080000h
+DM_PELSHEIGHT       = 00100000h

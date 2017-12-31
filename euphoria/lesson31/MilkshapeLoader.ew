@@ -1,0 +1,167 @@
+include get.e
+
+global sequence ms3d_header, ms3d_vertex, ms3d_triangle, ms3d_group, ms3d_material
+global integer NumVertices, NumTriangles, NumGroups, NumMaterials
+
+integer void
+
+global function loadModelData(sequence FileName)
+sequence id, vertex, vertexIndices, vertexNormals, s, t, group_name, triangleIndices,
+			  material_name, texture, alphamap
+			
+integer version, triangle_flags, boneId, referenceCount, vertex_flags, smoothingGroup, groupIndex, group_flags, numtriangles,
+		   materialIndex, transparency, mode
+
+atom ambient, diffuse, specular, emissive, shininess, textureId
+		   
+atom fn
+
+sequence data, chunk
+
+data = {}
+
+
+fn = open(FileName,"rb")
+if atom(FileName) then
+	return 0
+end if
+
+while 1 do
+	chunk = get_bytes(fn,100)
+	data &= chunk
+	if length(chunk) < 100 then
+		exit
+	end if
+end while
+
+close(fn)
+
+ms3d_header = data[1..14]
+data = data[15..length(data)]
+
+id = ms3d_header[1..10]
+if not equal(id,"MS3D000000") then
+	void = message_box("Error","Not a Milkshape Model!",#10+#30)
+	return 0
+end if
+
+version = bytes_to_int(ms3d_header[11..14])
+if version != 4 then
+	void = message_box("Error","Incorrect version",#10+#30)
+	return 0
+end if
+
+NumVertices = bytes_to_int({data[1],data[2],0,0})
+data = data[3..length(data)]
+
+ms3d_vertex = {}
+vertex = {0.0,0.0,0.0}
+for i = 1 to NumVertices do
+	vertex_flags = bytes_to_int({data[1],0,0,0})
+	vertex[1] = float32_to_atom({data[2],data[3],data[4],data[5]})
+	vertex[2] = float32_to_atom({data[6],data[7],data[8],data[9]})
+	vertex[3] = float32_to_atom({data[10],data[11],data[12],data[13]}) 
+	boneId = bytes_to_int({data[14],0,0,0})
+	referenceCount = bytes_to_int({data[15],0,0,0})
+	ms3d_vertex = append(ms3d_vertex,{vertex_flags,vertex,boneId,referenceCount})
+	data = data[16..length(data)]
+end for
+
+
+NumTriangles = bytes_to_int({data[1],data[2],0,0})
+data = data[3..length(data)]
+
+ms3d_triangle = {}
+vertexIndices = {0.0,0.0,0.0}
+vertexNormals = {{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}}
+s = {0.0,0.0,0.0}
+t = {0.0,0.0,0.0}
+for i = 1 to NumTriangles do
+	triangle_flags = bytes_to_int({data[1],data[2],0,0})
+	vertexIndices[1] = bytes_to_int({data[3],data[4],0,0})
+	vertexIndices[2] = bytes_to_int({data[5],data[6],0,0})
+	vertexIndices[3] = bytes_to_int({data[7],data[8],0,0})
+	vertexNormals[1][1] = float32_to_atom({data[9],data[10],data[11],data[12]})
+	vertexNormals[1][2] = float32_to_atom({data[13],data[14],data[15],data[16]})
+	vertexNormals[1][3] = float32_to_atom({data[17],data[18],data[19],data[20]})
+	vertexNormals[2][1] = float32_to_atom({data[21],data[22],data[23],data[24]})
+	vertexNormals[2][2] = float32_to_atom({data[25],data[26],data[27],data[28]})
+	vertexNormals[2][3] = float32_to_atom({data[29],data[30],data[31],data[32]})
+	vertexNormals[3][1] = float32_to_atom({data[33],data[34],data[35],data[36]})
+	vertexNormals[3][2] = float32_to_atom({data[37],data[38],data[39],data[40]})
+	vertexNormals[3][3] = float32_to_atom({data[41],data[42],data[43],data[44]})
+	s[1] = float32_to_atom({data[45],data[46],data[47],data[48]})
+	s[2] = float32_to_atom({data[49],data[50],data[51],data[52]})
+	s[3] = float32_to_atom({data[53],data[54],data[55],data[56]})
+	t[1] = float32_to_atom({data[57],data[58],data[59],data[60]})
+	t[2] = float32_to_atom({data[61],data[62],data[63],data[64]})
+	t[3] = float32_to_atom({data[65],data[66],data[67],data[68]})
+	smoothingGroup = bytes_to_int({data[69],0,0,0})
+	groupIndex = bytes_to_int({data[70],0,0,0})
+	ms3d_triangle = append(ms3d_triangle,{triangle_flags,vertexIndices,vertexNormals,s,t,smoothingGroup,groupIndex})
+	data = data[71..length(data)]
+end for
+
+
+NumGroups = bytes_to_int({data[1],data[2],0,0})
+data = data[3..length(data)]
+
+ms3d_group = {}
+for i = 1 to NumGroups do
+	group_flags = bytes_to_int({data[1],0,0,0})
+	group_name = data[2..33]
+	numtriangles = bytes_to_int({data[34],data[35],0,0})
+	data = data[36..length(data)]
+	triangleIndices = {}
+	for j = 1 to numtriangles do
+		triangleIndices &= bytes_to_int({data[1],data[2],0,0})
+		data = data[3..length(data)]
+	end for
+	materialIndex = bytes_to_int({data[1],0,0,0})
+	ms3d_group = append(ms3d_group,{group_flags,group_name,numtriangles,triangleIndices,materialIndex})
+	data = data[2..length(data)]
+end for
+
+
+NumMaterials = bytes_to_int({data[1],data[2],0,0})
+data = data[3..length(data)]
+
+ms3d_material = {}
+
+for i = 1 to NumMaterials do
+	material_name = data[1..32]
+	ambient = allocate(16)
+	poke(ambient,{data[33],data[34],data[35],data[36]})
+	poke(ambient+4,{data[37],data[38],data[39],data[40]})
+	poke(ambient+8,{data[41],data[42],data[43],data[44]})
+	poke(ambient+12,{data[45],data[46],data[47],data[48]})
+	diffuse = allocate(16)
+	poke(diffuse,{data[49],data[50],data[51],data[52]})
+	poke(diffuse+4,{data[53],data[54],data[55],data[56]})
+	poke(diffuse+8,{data[57],data[58],data[59],data[60]})
+	poke(diffuse+12,{data[61],data[62],data[63],data[64]})
+	specular = allocate(16)
+	poke(specular,{data[65],data[66],data[67],data[68]})
+	poke(specular+4,{data[69],data[70],data[71],data[72]})
+	poke(specular+8,{data[73],data[74],data[75],data[76]})
+	poke(specular+12,{data[77],data[78],data[79],data[80]})
+	emissive = allocate(16)
+	poke(emissive,{data[81],data[82],data[83],data[84]})
+	poke(emissive+4,{data[85],data[86],data[87],data[88]})
+	poke(emissive+8,{data[89],data[90],data[91],data[92]})
+	poke(emissive+12,{data[93],data[94],data[95],data[96]})
+	shininess = float32_to_atom({data[97],data[98],data[99],data[100]})
+	transparency = float32_to_atom({data[101],data[102],data[103],data[104]})
+	mode = bytes_to_int({data[105],0,0,0})
+	texture = data[106..233]
+	alphamap = data[234..361]
+	textureId = allocate(4)
+	ms3d_material = append(ms3d_material,{material_name,ambient,diffuse,specular,emissive,shininess,transparency,mode,texture,alphamap,textureId})
+	data = data[362..length(data)]
+end for
+
+return 1
+
+end function
+
+-- Animation information goes here someday -----

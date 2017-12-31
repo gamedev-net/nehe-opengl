@@ -1,0 +1,46 @@
+{\rtf1\mac\ansicpg10000\cocoartf100
+{\fonttbl\f0\fswiss\fcharset77 Helvetica-Bold;\f1\fswiss\fcharset77 Helvetica;\f2\fswiss\fcharset77 Helvetica-Oblique;
+\f3\fmodern\fcharset77 Courier;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww9620\viewh7500\viewkind0
+\pard\tx1440\tx2880\tx4320\tx5760\tx7200\ql\qnatural
+
+\f0\b\fs24 \cf0 This is the Mac OS X Cocoa port of NeHe's Tutorial #16 (http://nehe.gamedev.net/)\
+
+\f1\b0 \
+Implements all the features of Jeff Molofee's tutorial, using NSOpenGLView,\
+including full-screen capability.\
+\
+There are two classes, 
+\f2\i Lesson16Controller 
+\f1\i0 and 
+\f2\i Lesson16View
+\f1\i0 .  The view is a subclass of NSOpenGLView, and implements all the necessary drawing.  By default, it creates a window 640x480, and creates a pixel format of 16 color bits and 16 depth bits.  Full-screen mode switches to 800x600, same color and depth bits.  This should work on any OS X machine.\
+\
+One of the big differences architecturally is this implementation uses a rendering timer to update the view, instead of updating when idle.\
+\
+The other big difference is the texture-loading code.  In this, we use NSBitmapImageRep to handle reading of the bitmap (NeHe's original .bmp is used, instead of converting it to another format).  The bytes in the bitmap are then row-swapped as NSBitmapImageRep will read them in in row-reversed order.  In other words,\
+\
+
+\f3 0 1 2 3\
+4 5 6 7\
+8 9 A B\
+C D E F\
+
+\f1 \
+is read in by NSBitmapImageRep as\
+\
+
+\f3 C D E F\
+8 9 A B\
+4 5 6 7\
+0 1 2 3\
+
+\f1 \
+This information is then loaded into a set of variables inside the view (they are arrays to simplify use later when multiple images are loaded).\
+\
+Also, there is a method, 
+\f2\i checkLighting
+\f1\i0 , which is used to keep the view consistent between full-screen and windowed modes (since switching creates a new OpenGL context).\
+\
+Port by Bryan Blackburn (http://www.withay.com/)}

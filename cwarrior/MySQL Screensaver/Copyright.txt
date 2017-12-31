@@ -1,0 +1,36 @@
+This file comes with the GLPoem tutorial source code. Following is the list of files this copyright applies to:
+
+Effect.h
+main.h
+resource.h
+SCCharacter.h
+SCOpenGL.h
+SCString.h
+SCText.h
+TGLFont.h
+TGLWindow.h
+
+Configure.cpp
+Effect.cpp
+Main.cpp
+MySQL.cpp
+registry.cpp
+SCCharacter.cpp
+SCString.cpp
+SCText.cpp
+TGLFont.cpp
+TGLWindow.cpp
+
+Screensaver.rc
+defpoem.txt
+
+
+
+
+The code was written by Kristo Kaas (that's me :) - originally for BC5.02) and ported for MSVC by Brian Tegart.
+
+The abovementioned files are free for anykind of use you might see fit. There are no limits as to what you can do with this source code (use it for commercial purposes or whatnot). However, this project _was_ created for a purely educational purpose and therefore no guarantee exists that it will work on all system configurations. Also, by running the compiled version of this software you agree that whatever damage it might cause to you or the system it is run on, the abovementioned individuals cannot be held responsible for it.
+
+Okay, that concludes the official part. However, I'd be very very interested in how many people actually find this code useful. So, if you use it in your projects, I'd appreciate if you gave me credit. Emailing me bug reports, not-so-trivial questions and info about the stuff you've done with it, would be extra cool. Just send your comments to: crispy@hot.ee
+
+Note that this is an advanced tutorial project and therefore emailing me questions about simple stuff isn't exactly what I'm looking forward to :) Before e-mailing, please also read the tutorial text available at nehe.gamedev.net.

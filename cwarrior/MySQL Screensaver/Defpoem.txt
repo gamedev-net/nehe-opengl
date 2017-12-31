@@ -1,0 +1,25 @@
+char * Poem = "\
+^\n\
+TOKEN_NAME:Funeral Blues\n\
+^\n\
+TOKEN_AUTHOR:by W. H. Auden\n\
+^\n\
+Stop all the clocks, cut off the telephone,\n\
+Prevent the dog from barking with a juicy bone,\n\
+Silence the pianos and with muffled drum\n\
+Bring out the coffin, let the mourners come.\n\
+^\n\
+Let aeroplanes circle moaning overhead\n\
+Scribbling on the sky the message He Is Dead.\n\
+Put crepe bows round the white necks of public doves,\n\
+Let the traffic policemen wear black cotton gloves.\n\
+^\n\
+He was my North, my South, my East and West.\n\
+My working week and my Sunday rest,\n\
+My noon, my midnight, my talk, my song;\n\
+I thought that love would last forever; I was wrong.\n\
+^\n\
+The stars are not wanted now: put out every one;\n\
+Pack up the moon and dismantle the sun;\n\
+Pour away the ocean and sweep up the wood;\n\
+For nothing now can ever come to any good.";

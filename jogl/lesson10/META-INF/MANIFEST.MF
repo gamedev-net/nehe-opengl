@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Created-By: NetBeans IDE
+Specified-By: World_Structure/Lesson10.jarContent
+Main-Class: World_Structure/Lesson10
+

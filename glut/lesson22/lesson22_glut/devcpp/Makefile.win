@@ -1,0 +1,32 @@
+# Project: NeHeGL_Glut
+# Makefile created by Dev-C++ 4.9.8.0
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = ../src/nehegl_glut.o ../../NeheGL_Glut/src/tga.o $(RES)
+LINKOBJ  = ../src/nehegl_glut.o ../../NeheGL_Glut/src/tga.o $(RES)
+LIBS =  -L"C:/Arquivos de programas/Dev-Cpp/lib" -lopengl32 -lglu32 -lglut32 
+INCS =  -I"C:/Arquivos de programas/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Arquivos de programas/Dev-Cpp/include/c++"  -I"C:/Arquivos de programas/Dev-Cpp/include/c++/mingw32"  -I"C:/Arquivos de programas/Dev-Cpp/include/c++/backward"  -I"C:/Arquivos de programas/Dev-Cpp/include" 
+BIN  = ../exe/NEHEGL~1.exe
+CXXFLAGS = $(CXXINCS) 
+CFLAGS = $(INCS) 
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before ../exe/NEHEGL~1.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(LINKOBJ)
+	$(CPP) $(LINKOBJ) -o "..\exe\NEHEGL~1.exe" $(LIBS)
+
+../src/nehegl_glut.o: ../src/nehegl_glut.cpp
+	$(CPP) -c ../src/nehegl_glut.cpp -o ../src/nehegl_glut.o $(CXXFLAGS)
+
+../../NeheGL_Glut/src/tga.o: ../../NeheGL_Glut/src/tga.cpp
+	$(CPP) -c ../../NeheGL_Glut/src/tga.cpp -o ../../NeheGL_Glut/src/tga.o $(CXXFLAGS)

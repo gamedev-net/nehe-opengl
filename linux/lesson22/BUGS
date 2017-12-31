@@ -1,0 +1,7 @@
+this is one problem on textures loader,
+the color on the screen don't match
+the original bmp's colors
+and the texture have the upside down.
+i think the problem is in the SDL bmp's loader.
+
+happy debugging:-)

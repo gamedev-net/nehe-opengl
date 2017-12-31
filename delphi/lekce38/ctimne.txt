@@ -1,0 +1,9 @@
+Vytvoøení souboru se zdroji:
+
+Jelikož vestavìná utilita v Delphi nedokáže pracovat s obrázky používajícími více než 256 barev, nedokáže ani vytvoøit pøíslušný RES soubor. Jsou dvì možnosti jak to obejít:
+
+1) Manuálnì vytvoøit soubor RC s patøiènými parametry a ten pak nechat "pøežvýkat" utilitì brcc32.exe (je souèástí Delphi v adresáøi Bin), která vytvoøí RES soubor.
+
+2) Použít nìjaký externí prográmek, který vše udìlá za nás.
+
+Já jsem zvolil druhou variantu a pro tuto pøíležitost jsem na internetu  našel freewareový prográmek ResComp, který všechno provede. Je jednoduchý na obsluhu. Návod je pøiložen.

@@ -1,0 +1,210 @@
+without warning
+
+include dll.e
+include get.e
+
+procedure not_found(sequence name)
+    puts(1, "Couldn't find " & name & '\n')
+    while not wait_key() do end while
+    abort(1)
+end procedure
+
+function link_c_func(atom dll, sequence name, sequence args, atom result)
+-- dynamically link a C routine as a Euphoria function
+    integer handle
+
+    handle = define_c_func(dll, name, args, result)
+    if handle = -1 then
+    not_found(name)
+    else
+    return handle
+    end if
+end function
+
+function link_c_proc(atom dll, sequence name, sequence args)
+-- dynamically link a C routine as a Euphoria function
+    integer handle
+
+    handle = define_c_proc(dll, name, args)
+    if handle = -1 then
+    not_found(name)
+    else
+    return handle
+    end if
+end function
+
+global atom glAccum, glAlphaFunc, glArrayElementEXT, glBegin, glBitmap, glBindTexture, glBlendFunc, glCallList, glCallLists,
+            glClear, glClearAccum, glClearColor, glClearDepth, glClearIndex, glClearStencil, glClipPlane, glColor3b,
+            glColor3bv, glColor3d, glColor3dv, glColor3f, glColor3fv, glColor3i, glColor3iv, glColor3s, glColor3sv,
+            glColor3ub, glColor3ubv, glColor3ui, glColor3uiv, glColor3us, glColor3usv, glColor4b, glColor4bv, glColor4d,
+            glColor4dv, glColor4f, glColor4fv, glColor4i, glColor4iv, glColor4s, glColor4sv, glColor4ub, glColor4ubv,
+            glColor4ui, glColor4uiv, glColor4us, glColor4usv, glColorMask, glColorMaterial, glColorPointerEXT,
+            glCopyPixels, glCullFace, glDeleteLists, glDepthFunc, glDepthMask, glDepthRange, glDisable, glDrawArraysEXT,
+            glDrawBuffer, glDrawPixels, glEdgeFlag, glEdgeFlagPointerEXT, glEdgeFlagv, glEnable, glEnd, glEndList,
+            glEvalCoord1d, glEvalCoord1dv, glEvalCoord1f, glEvalCoord1fv, glEvalCoord2d, glEvalCoord2dv, glEvalCoord2f,
+            glEvalCoord2fv, glEvalMesh1, glEvalMesh2, glEvalPoint1, glEvalPoint2, glFeedbackBuffer, glFinish,
+            glFlush, glFogf, glFogfv, glFogi, glFogiv, glFrontFace, glFrustum, glGenLists, glGenTextures, glGetBooleanv,
+            glGetClipPlane, glGetDoublev, glGetError, glGetFloatv, glGetIntegerv, glGetLightfv, glGetLightiv, glGetMapdv,
+            glGetMapfv, glGetMapiv, glGetMaterialfv, glGetMaterialiv, glGetPixelMapfv, glGetPixelMapuiv, glGetPixelMapusv,
+            glGetPointervEXT, glGetPolygonStipple, glGetString, glGetTexEnvfv, glGetTexEnviv, glGetTexGendv,
+            glGetTexGenfv, glGetTexGeniv, glGetTexImage, glGetTexLevelParameterfv, glGetTexLevelParameteriv,
+            glGetTexParameterfv, glGetTexParameteriv, glHint, glIndexMask, glIndexPointerEXT, glIndexd, glIndexdv,
+            glIndexf, glIndexfv, glIndexi, glIndexiv, glIndexs, glIndexsv, glInitNames, glIsEnabled, glIsList,
+            glLightModelf, glLightModelfv, glLightModeli, glLightModeliv, glLightf, glLightfv, glLighti, glLightiv,
+            glLineStipple, glLineWidth, glListBase, glLoadIdentity, glLoadMatrixd, glLoadMatrixf, glLoadName, glLogicOp,
+            glMap1d, glMap1f, glMap2d, glMap2f, glMapGrid1d, glMapGrid1f, glMapGrid2d, glMapGrid2f, glMaterialf,
+            glMaterialfv, glMateriali, glMaterialiv, glMatrixMode, glMultMatrixd, glMultMatrixf, glNewList, glNormal3b,
+            glNormal3bv, glNormal3d, glNormal3dv, glNormal3f, glNormal3fv, glNormal3i, glNormal3iv, glNormal3s,
+            glNormal3sv, glNormalPointerEXT, glOrtho, glPassThrough, glPixelMapfv, glPixelMapuiv, glPixelMapusv,
+            glPixelStoref, glPixelStorei, glPixelTransferf, glPixelTransferi, glPixelZoom, glPointSize, glPolygonMode,
+            glPolygonStipple, glPopAttrib, glPopMatrix, glPopName, glPushAttrib, glPushMatrix, glPushName, glRasterPos2d,
+            glRasterPos2dv, glRasterPos2f, glRasterPos2fv, glRasterPos2i, glRasterPos2iv, glRasterPos2s, glRasterPos2sv,
+            glRasterPos3d, glRasterPos3dv, glRasterPos3f, glRasterPos3fv, glRasterPos3i, glRasterPos3iv, glRasterPos3s,
+            glRasterPos3sv, glRasterPos4d, glRasterPos4dv, glRasterPos4f, glRasterPos4fv, glRasterPos4i, glRasterPos4iv,
+            glRasterPos4s, glRasterPos4sv, glReadBuffer, glReadPixels, glRectd, glRectdv, glRectf, glRectfv, glRecti,
+            glRectiv, glRects, glRectsv, glRenderMode, glRotated, glRotatef, glScaled, glScalef, glScissor,
+            glSelectBuffer, glShadeModel, glStencilFunc, glStencilMask, glStencilOp, glTexCoord1d, glTexCoord1dv,
+            glTexCoord1f, glTexCoord1fv, glTexCoord1i, glTexCoord1iv, glTexCoord1s, glTexCoord1sv, glTexCoord2d,
+            glTexCoord2dv, glTexCoord2f, glTexCoord2fv, glTexCoord2i, glTexCoord2iv, glTexCoord2s, glTexCoord2sv,
+            glTexCoord3d, glTexCoord3dv, glTexCoord3f, glTexCoord3fv, glTexCoord3i, glTexCoord3iv, glTexCoord3s,
+            glTexCoord3sv, glTexCoord4d, glTexCoord4dv, glTexCoord4f, glTexCoord4fv, glTexCoord4i, glTexCoord4iv,
+            glTexCoord4s, glTexCoord4sv, glTexCoordPointerEXT, glTexEnvf, glTexEnvfv, glTexEnvi, glTexEnviv, glTexGend,
+            glTexGendv, glTexGenf, glTexGenfv, glTexGeni, glTexGeniv, glTexImage1D, glTexImage2D, glTexParameterf,
+            glTexParameterfv, glTexParameteri, glTexParameteriv, glTranslated, glTranslatef, glVertex2d, glVertex2dv,
+            glVertex2f, glVertex2fv, glVertex2i, glVertex2iv, glVertex2s, glVertex2sv, glVertex3d, glVertex3dv,
+            glVertex3f, glVertex3fv, glVertex3i, glVertex3iv, glVertex3s, glVertex3sv, glVertex4d, glVertex4dv,
+            glVertex4f, glVertex4fv, glVertex4i, glVertex4iv, glVertex4s, glVertex4sv, glVertexPointerEXT, glViewport,
+            glXChooseVisual, glXCopyContext, glXCreateContext, glXCreateGLXPixmap, glXDestroyContext,
+            glXDestroyGLXPixmap, glXGetConfig, glXGetCurrentContext, glXGetCurrentDrawable, glXIsDirect, glXMakeCurrent,
+            glXQueryExtension, glXQueryVersion, glXSwapBuffers, glXUseXFont, glXWaitGL, glXWaitX, gluBeginCurve,
+            gluBeginPolygon, gluBeginSurface, gluBeginTrim, gluBuild1DMipmaps, gluBuild2DMipmaps, gluCylinder,
+            gluDeleteNurbsRenderer, gluDeleteQuadric, gluDeleteTess, gluDisk, gluEndCurve, gluEndPolygon, gluEndSurface,
+            gluEndTrim, gluErrorString, gluGetNurbsProperty, gluGetTessProperty, gluLoadSamplingMatrices, gluLookAt,
+            gluNewNurbsRenderer, gluNewQuadric, gluNewTess, gluNextContour, gluNurbsCallback, gluNurbsCurve,
+            gluNurbsProperty, gluNurbsSurface, gluOrtho2D, gluPartialDisk, gluPerspective, gluPickMatrix,
+            gluProject, gluPwlCurve, gluQuadricCallback, gluQuadricDrawStyle, gluQuadricNormals, gluQuadricOrientation,
+            gluQuadricTexture, gluScaleImage, gluSphere, gluTessBeginContour, gluTessBeginPolygon, gluTessCallback,
+            gluTessEndContour, gluTessEndPolygon, gluTessNormal, gluTessProperty, gluTessVertex, gluUnProject,
+
+            wglCreateContext, wglDeleteContext, wglGetProcAddress, wglMakeCurrent, wglUseFontBitmaps, wglUseFontOutlines,
+
+            auxDIBImageLoad
+
+procedure link_dll_routines()
+-- get handles to all dll routines that we need
+    atom gl, glu, glaux
+
+    gl = open_dll("OpenGL32.dll")
+    if gl = NULL then
+    not_found("OpenGL32.dll")
+    end if
+    glu = open_dll("glu32.dll")
+    if glu = NULL then
+    not_found("glu32.dll")
+    end if
+    glaux = open_dll("glaux.dll")
+    if glaux = NULL then
+    not_found("glaux.dll")
+    end if
+
+
+    glBegin = link_c_proc(gl, "glBegin", {C_INT})
+    glBindTexture = link_c_proc(gl, "glBindTexture", {C_INT, C_UINT})
+    glBlendFunc = link_c_proc(gl, "glBlendFunc", {C_INT,C_INT})
+    glCallList = link_c_proc(gl, "glCallList", {C_INT})
+    glCallLists = link_c_proc(gl, "glCallLists", {C_INT,C_INT,C_POINTER})
+    glClear = link_c_proc(gl, "glClear", {C_INT})
+    glClearColor = link_c_proc(gl, "glClearColor", {C_FLOAT,C_FLOAT,C_FLOAT,C_FLOAT})
+    glClearDepth = link_c_proc(gl, "glClearDepth", {C_DOUBLE})
+    glClearStencil = link_c_proc(gl, "glClearStencil", {C_INT})
+    glClipPlane = link_c_proc(gl, "glClipPlane", {C_INT,C_POINTER})
+    glColor3f = link_c_proc(gl, "glColor3f", {C_FLOAT,C_FLOAT,C_FLOAT})
+    glColor3ub = link_c_proc(gl, "glColor3ub", {C_INT,C_INT,C_INT})
+    glColor4f = link_c_proc(gl, "glColor4f", {C_FLOAT,C_FLOAT,C_FLOAT,C_FLOAT})
+    glColor4ub = link_c_proc(gl, "glColor4ub", {C_INT,C_INT,C_INT,C_INT})
+    glColorMask = link_c_proc(gl, "glColorMask", {C_INT,C_INT,C_INT,C_INT})
+    glDisable = link_c_proc(gl, "glDisable", {C_INT})
+    glDeleteLists = link_c_proc(gl, "glDeleteLists", {C_UINT,C_INT})
+    glDepthFunc = link_c_proc(gl, "glDepthFunc", {C_INT})
+    glEnable = link_c_proc(gl, "glEnable", {C_INT})
+    glEnd = link_c_proc(gl, "glEnd", {})
+    glEndList = link_c_proc(gl, "glEndList", {})
+    glFlush = link_c_proc(gl, "glFlush", {})
+    glFogf = link_c_proc(gl, "glFogf", {C_INT,C_FLOAT})
+    glFogfv = link_c_proc(gl, "glFogfv", {C_INT,C_POINTER})
+    glFogi = link_c_proc(gl, "glFogi", {C_INT,C_INT})
+    glTexGeni = link_c_proc(gl, "glTexGeni", {C_INT,C_INT,C_INT})
+    glGenLists = link_c_func(gl, "glGenLists", {C_INT},C_INT)
+    glGenTextures = link_c_proc(gl, "glGenTextures", {C_INT, C_POINTER})
+    glGetFloatv = link_c_proc(gl, "glGetFloatv", {C_INT, C_POINTER})
+    glGetIntegerv = link_c_proc(gl, "glGetIntegerv", {C_INT,C_POINTER})
+    glGetString = link_c_func(gl, "glGetString", {C_INT},C_POINTER)
+    glHint = link_c_proc(gl, "glHint", {C_INT,C_INT})
+    glInitNames = link_c_proc(gl, "glInitNames", {})
+    glLightfv = link_c_proc(gl, "glLightfv", {C_INT,C_INT,C_POINTER})
+    glLineWidth = link_c_proc(gl, "glLineWidth", {C_FLOAT})
+    glListBase = link_c_proc(gl, "glListBase", {C_UINT})
+    glLoadIdentity = link_c_proc(gl, "glLoadIdentity", {})
+    glLoadName = link_c_proc(gl, "glLoadName", {C_INT})
+    glMatrixMode = link_c_proc(gl, "glMatrixMode", {C_INT})
+    glNewList = link_c_proc(gl, "glNewList", {C_INT,C_INT})
+    glNormal3f = link_c_proc(gl, "glNormal3f", {C_FLOAT,C_FLOAT,C_FLOAT})
+    glOrtho = link_c_proc(gl, "glOrtho", {C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE})
+    glPixelTransferf = link_c_proc(gl, "glPixelTransferf", {C_INT,C_FLOAT})
+    glPolygonMode = link_c_proc(gl, "glPolygonMode", {C_INT,C_INT})
+    glPopAttrib = link_c_proc(gl, "glPopAttrib", {})
+    glPopMatrix = link_c_proc(gl, "glPopMatrix", {})
+    glPushAttrib = link_c_proc(gl, "glPushAttrib", {C_UINT})
+    glPushMatrix = link_c_proc(gl, "glPushMatrix", {})
+    glPushName = link_c_proc(gl, "glPushName", {C_INT})
+    glRasterPos2f = link_c_proc(gl, "glRasterPos2f", {C_FLOAT,C_FLOAT})
+    glRenderMode = link_c_func(gl, "glRenderMode", {C_INT}, C_INT)
+    glRotatef = link_c_proc(gl, "glRotatef", {C_FLOAT,C_FLOAT,C_FLOAT,C_FLOAT})
+    glScalef = link_c_proc(gl, "glScalef", {C_FLOAT,C_FLOAT,C_FLOAT})
+    glScissor = link_c_proc(gl, "glScissor", {C_INT,C_INT,C_INT,C_INT})
+    glSelectBuffer = link_c_proc(gl, "glSelectBuffer", {C_INT,C_POINTER})
+    glShadeModel = link_c_proc(gl, "glShadeModel", {C_INT})
+    glStencilFunc = link_c_proc(gl, "glStencilFunc", {C_INT,C_INT,C_UINT})
+    glStencilOp = link_c_proc(gl, "glStencilOp", {C_INT,C_INT,C_INT})
+    glTexCoord2d = link_c_proc(gl, "glTexCoord2d", {C_DOUBLE,C_DOUBLE})
+    glTexCoord2f = link_c_proc(gl, "glTexCoord2f", {C_FLOAT,C_FLOAT})
+    glTexEnvf = link_c_proc(gl, "glTexEnvf", {C_INT,C_INT,C_INT})
+    glTexGeni = link_c_proc(gl, "glTexGeni", {C_INT,C_INT,C_INT})
+    glTexImage2D = link_c_proc(gl, "glTexImage2D", {C_INT,C_INT,C_INT,C_INT,C_INT,C_INT,C_INT,C_INT,C_POINTER})
+    glTexParameterf = link_c_proc(gl, "glTexParameterf", {C_INT,C_INT,C_FLOAT})
+    glTexParameterfv = link_c_proc(gl, "glTexParameterfv", {C_INT,C_INT,C_POINTER})
+    glTexParameteri = link_c_proc(gl, "glTexParameteri", {C_INT,C_INT,C_INT})
+    glTranslated = link_c_proc(gl, "glTranslated", {C_DOUBLE,C_DOUBLE,C_DOUBLE})
+    glTranslatef = link_c_proc(gl, "glTranslatef", {C_FLOAT,C_FLOAT,C_FLOAT})
+    glVertex2d = link_c_proc(gl, "glVertex2d", {C_DOUBLE,C_DOUBLE})
+    glVertex2f = link_c_proc(gl, "glVertex2f", {C_FLOAT,C_FLOAT})
+    glVertex2i = link_c_proc(gl, "glVertex2i", {C_INT,C_INT})
+    glVertex3d = link_c_proc(gl, "glVertex3d", {C_DOUBLE,C_DOUBLE,C_DOUBLE})
+    glVertex3f = link_c_proc(gl, "glVertex3f", {C_FLOAT,C_FLOAT,C_FLOAT})
+    glVertex3i = link_c_proc(gl, "glVertex3i", {C_INT,C_INT,C_INT})
+    glViewport = link_c_proc(gl, "glViewport", {C_INT,C_INT,C_INT,C_INT})
+
+    gluBuild2DMipmaps = link_c_proc(glu, "gluBuild2DMipmaps", {C_INT,C_INT,C_INT,C_INT,C_INT,C_INT,C_POINTER})
+    gluCylinder = link_c_proc(glu, "gluCylinder", {C_POINTER,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_INT,C_INT})
+    gluDisk = link_c_proc(glu, "gluDisk", {C_POINTER,C_DOUBLE,C_DOUBLE,C_INT,C_INT})
+    gluLookAt = link_c_proc(glu, "gluLookAt", {C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE})
+    gluNewQuadric = link_c_func(glu, "gluNewQuadric", {}, C_POINTER)
+    gluPartialDisk = link_c_proc(glu, "gluPartialDisk", {C_POINTER,C_DOUBLE,C_DOUBLE,C_INT,C_INT,C_DOUBLE,C_DOUBLE})
+    gluPerspective = link_c_proc(glu, "gluPerspective", {C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE})
+    gluPickMatrix = link_c_proc(glu, "gluPickMatrix", {C_DOUBLE,C_DOUBLE,C_DOUBLE,C_DOUBLE,C_INT})
+    gluQuadricNormals = link_c_proc(glu, "gluQuadricNormals", {C_POINTER,C_INT})
+    gluQuadricTexture = link_c_proc(glu, "gluQuadricTexture", {C_POINTER,C_INT})
+    gluSphere = link_c_proc(glu, "gluSphere", {C_POINTER,C_DOUBLE,C_INT,C_INT})
+
+    wglDeleteContext = link_c_func(gl,"wglDeleteContext", {C_POINTER}, C_INT)
+    wglCreateContext = link_c_func(gl, "wglCreateContext", {C_UINT}, C_INT)
+    wglGetProcAddress = link_c_func(gl, "wglGetProcAddress", {C_POINTER}, C_POINTER)
+    wglMakeCurrent = link_c_func(gl, "wglMakeCurrent", {C_UINT,C_UINT}, C_INT)
+    wglUseFontBitmaps = link_c_func(gl, "wglUseFontBitmapsA", {C_INT,C_UINT,C_UINT,C_UINT}, C_INT)
+    wglUseFontOutlines = link_c_func(gl, "wglUseFontOutlinesA", {C_INT,C_UINT,C_UINT,C_UINT,C_FLOAT,C_FLOAT,
+                                                                C_INT,C_POINTER}, C_INT)
+
+    auxDIBImageLoad = link_c_func(glaux, "auxDIBImageLoadA", {C_POINTER}, C_POINTER)
+
+end procedure
+link_dll_routines()

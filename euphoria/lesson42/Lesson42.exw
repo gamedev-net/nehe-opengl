@@ -1,0 +1,317 @@
+--**************************************************************************************************************
+-- *                                                      *                                                       *
+-- *  Lesson 42: Multiple Viewports                       *  Created:  05/17/2003                                 *
+-- *                                                      *                                                       *
+-- *  This Program Was Written By Jeff Molofee (NeHe)     *  Runs Much Faster (Many Useless Loops Removed)        *
+-- *  From http:--nehe.gamedev.net.                       *                                                       *
+-- *                                                      *  Maze Code Is Still Very Unoptimized.  Speed Can Be   *
+-- *  I Wanted To Create A Maze, And Was Able To Find     *  Increased Considerably By Keeping Track Of Cells     *
+-- *  Example Code, But Most Of It Was Uncommented And    *  That Have Been Visited Rather Than Randomly          *
+-- *  Difficult To Figure Out.                            *  Searching For Cells That Still Need To Be Visited.   *
+-- *                                                      *                                                       *
+-- *  This Is A Direct Conversion Of Basic Code I Wrote   *  This Tutorial Demonstrates Multiple Viewports In A   *
+-- *  On The Atari XE Many Years Ago.                     *  Sinc_proc(e Window With Both Ortho And Perspective Modes  *
+-- *                                                      *  Used At The Same Time.  As Well, Two Of The Views    *
+-- *  It Barely Resembles The Basic Code, But The Idea    *  Have Lighting Enabled, While The Other Two Do Not.   *
+-- *  Is Exactly The Same.                                *                                                       *
+-- *                                                      *********************************************************
+-- *  Branches Are Always Made From An Existing Path      *
+-- *  So There Should Always Be A Path Through The Maze   *
+-- *  Although It Could Be Quite Short :)                 *
+-- *                                                      *
+-- *  Do Whatever You Want With This Code.  If You Found  *
+-- *  It Useful Or Have Made Some Nice Changes To It,     *
+-- *  Send Me An Email: nehe@connect.ab.ca                *
+-- *                                                      *
+-- *******************************************************/
+
+include NeHeGL.exw
+
+without warning
+
+-- User Defined Variables
+integer	mx,my																-- General Loops (Used For Seeking)
+
+constant	width	= 128													-- Maze Width  (Must Be A Power Of 2)
+constant	height	= 128													-- Maze Height (Must Be A Power Of 2)
+
+integer	done															-- Flag To Let Us Know When It's Done
+integer	sp																-- Spacebar Pressed?
+
+sequence	r, g, b												-- Random Colors (4 Red, 4 Green, 4 Blue)
+r = {0,0,0,0} g = {0,0,0,0} b = {0,0,0,0}
+atom	tex_data														-- Holds Our Texture Data
+
+atom	xrot, yrot, zrot												-- Use For Rotation Of Objects
+xrot = 0
+yrot =0
+zrot = 0
+
+atom quadric													-- The Quadric Object
+quadric = allocate(4)
+
+procedure UpdateTex(integer dmx, integer dmy)										-- Update Pixel dmx, dmy On The Texture
+	poke(tex_data+(0+((dmx+(width*dmy))*3)),255)								-- Set Red Pixel To Full Bright
+	poke(tex_data+(1+((dmx+(width*dmy))*3)),255)								-- Set Green Pixel To Full Bright
+	poke(tex_data+(2+((dmx+(width*dmy))*3)),255)								-- Set Blue Pixel To Full Bright
+end procedure
+
+procedure Reset()														-- Reset The Maze, Colors, Start Point, Etc
+	mem_set(tex_data, 0, width * height *3)							-- Clear Out The Texture Memory With 0's
+
+	set_rand(c_func(GetTickCount,{}))												-- Try To Get More Randomness
+
+	for loop = 1 to 4 do								-- Loop So We Can Assign 4 Random Colors
+		r[loop]=rand(128)+128							-- Pick A Random Red Color (Bright)
+		g[loop]=rand(128)+128							-- Pick A Random Green Color (Bright)
+		b[loop]=rand(128)+128							-- Pick A Random Blue Color (Bright)
+	end for
+
+	mx=rand(width/2)*2											-- Pick A New Random X Position
+	my=rand(height/2)*2										-- Pick A New Random Y Position
+end procedure
+
+function Initialize()							-- Any GL Init Code & User Initialiazation Goes Here
+
+	tex_data = allocate(peek4u(window+24)*peek4u(window+28)*3)									-- Allocate Space For Our Texture
+
+	Reset()															-- Call Reset To Build Our Initial Texture, Etc.
+
+	-- Start Of User Initialization
+	c_proc(glTexParameteri,{GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP})
+	c_proc(glTexParameteri,{GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP})
+	c_proc(glTexParameterf,{GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR})
+	c_proc(glTexParameteri,{GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR}) 
+	c_proc(glTexImage2D,{GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, peek4u(tex_data)})
+
+	c_proc(glClearColor,{0.0, 0.0, 0.0, 0.0})								-- Black Background
+	c_proc(glClearDepth,{1.0})												-- Depth Buffer Setup
+
+	c_proc(glDepthFunc,{GL_LEQUAL})											-- The Type Of Depth Testing
+	c_proc(glEnable,{GL_DEPTH_TEST})											-- Enable Depth Testing
+
+	c_proc(glEnable,{GL_COLOR_MATERIAL})										-- Enable Color Material (Allows Us To Tint Textures)
+
+	c_proc(glEnable,{GL_TEXTURE_2D})											-- Enable Texture Mapping
+
+	quadric=c_func(gluNewQuadric,{})											-- Create A Pointer To The Quadric Object
+	c_proc(gluQuadricNormals,{quadric, GLU_SMOOTH})								-- Create Smooth Normals 
+	c_proc(gluQuadricTexture,{quadric, GL_TRUE})								-- Create Texture Coords
+
+	c_proc(glEnable,{GL_LIGHT0})												-- Enable Light0 (Default GL Light)
+
+	return TRUE														-- Return TRUE (Initialization Successful)
+end function
+global integer Init_id
+Init_id = routine_id("Initialize")
+
+
+procedure Deinitialize()												-- Any User DeInitialization Goes Here
+	free(tex_data)													-- Delete Our Texture Data (Freeing Up Memory)
+end procedure
+global integer Deinit_id
+Deinit_id = routine_id("Deinitialize")
+
+
+global procedure Update(atom milliseconds)				-- Perform Motion Updates Here
+integer		dir											-- Will Hold Current Direction
+atom fn
+	
+
+	if peek4u(peek4u(window+0)+VK_ESCAPE) then			-- Is ESC Being Pressed?
+		call_proc(Terminate_id,{})						-- Terminate The Program
+	end if
+
+	if peek4u(peek4u(window+0)+VK_F1) then				-- Is F1 Being Pressed?
+		call_proc(Toggle_id,{})							-- Toggle Fullscreen Mode
+	end if
+
+	if peek4u(peek4u(window+0)+' ') and not sp then		-- Check To See If Spacebar Is Pressed
+		sp = TRUE										-- If So, Set sp To TRUE (Spacebar Pressed)
+		Reset()											-- If So, Call Reset And Start A New Maze
+	end if
+
+	if not peek4u(peek4u(window+0)+' ') then			-- Check To See If Spacebar Has Been Released
+		sp = FALSE										-- If So, Set sp To FALSE (Spacebar Released)
+	end if
+
+	
+	xrot+=(milliseconds)*0.02									-- Increase Rotation On The X-Axis
+	yrot+=(milliseconds)*0.03									-- Increase Rotation On The Y-Axis
+	zrot+=(milliseconds)*0.015									-- Increase Rotation On The Z-Axis
+
+	done = TRUE													-- Set done To True
+	for  x = 0 to width-1  by 2 do								-- Loop Through All The Rooms
+		for  y = 0 to height-1 by 2 do							-- On X And Y Axis
+			if bytes_to_int({peek(tex_data+((x+(width*y))*3)),0,0,0}) = 0 then		-- If Current Texture Pixel (Room) Is Blank
+				done=FALSE										-- We Have To Set done To False (Not Finished Yet)
+			end if
+		end for
+	end for
+
+	if  done then												-- If done Is True Then There Were No Unvisited Rooms
+		-- Display A Message At The Top Of The Window, Pause For A Bit And Then Start Building A New Maze!
+		c_proc(SetWindowText,{peek4u(window+4),allocate_string("Lesson 42: Multiple Viewports... 2003 NeHe Productions... Maze Complete!")})
+		c_proc(Sleep,{5000})
+		c_proc(SetWindowText,{peek4u(window+4),allocate_string("Lesson 42: Multiple Viewports... 2003 NeHe Productions... Building Maze!")})
+		Reset()
+	end if
+
+	-- Check To Make Sure We Are Not Trapped (Nowhere Else To Move)
+	if ((mx>(width -4) or bytes_to_int({peek(tex_data+(((mx+2)+(width*(my+0)))*3)),0,0,0}) = 255)) and
+	   ((mx<2          or bytes_to_int({peek(tex_data+(((mx-2)+(width*(my-0)))*3)),0,0,0}) = 255)) and
+	   ((my>(height-4) or bytes_to_int({peek(tex_data+(((mx+0)+(width*(my+2)))*3)),0,0,0}) = 255)) and
+	   ((my<2          or bytes_to_int({peek(tex_data+(((mx-0)+(width*(my-2)))*3)),0,0,0}) = 255)) then
+		while 1 do													-- If We Are Trapped
+			mx = rand(width/2)*2								-- Pick A New Random X Position
+			my = rand(height/2)*2							-- Pick A New Random Y Position
+
+			if bytes_to_int({peek(tex_data + ((mx+(width*my))*3)),0,0,0}) != 0 then		-- Keep Picking A Random Position Until We Find
+				exit												-- One That Has Already Been Tagged (Safe Starting Point)
+			end if
+		end while
+	end if
+	
+	dir = floor(rand(3999)/1000)+1											-- Pick A Random Direction
+
+	if dir = 1 and mx<=(width-4) then						-- If The Direction Is 1 (Right) And We Are Not At The Far Right
+		if bytes_to_int({peek(tex_data+(((mx+2)+(width*(my+0)))*3)),0,0,0}) = 0 then	-- And If The Room To The Right Has Not Already Been Visited
+			UpdateTex(mx+1,my)								-- Update The Texture To Show Path Cut Out Between Rooms
+			mx+=2											-- Move To The Right (Room To The Right)
+		end if
+	end if
+
+	if  dir = 2 and my<=(height-4) then						-- If The Direction Is 2 (Down) And We Are Not At The Bottom
+		if bytes_to_int({peek(tex_data+(((mx+0)+(width*(my+2)))*3)),0,0,0}) = 0 then	-- And If The Room Below Has Not Already Been Visited
+			UpdateTex(mx,my+1)								-- Update The Texture To Show Path Cut Out Between Rooms
+			my+=2											-- Move Down (Room Below)
+		end if
+	end if
+
+	if dir = 3 and (mx>=2) then								-- If The Direction Is 3 (Left) And We Are Not At The Far Left
+		if bytes_to_int({peek(tex_data+(((mx-2)+(width*(my+0)))*3)),0,0,0}) = 0 then	-- And If The Room To The Left Has Not Already Been Visited
+			UpdateTex(mx-1,my)								-- Update The Texture To Show Path Cut Out Between Rooms
+			mx-=2											-- Move To The Left (Room To The Left)
+		end if
+	end if
+
+	if  dir = 4 and (my>=2)	then	 						-- If The Direction Is 4 (Up) And We Are Not At The Top
+		if bytes_to_int({peek(tex_data+(((mx+0)+(width*(my-2)))*3)),0,0,0}) = 0 then	-- And If The Room Above Has Not Already Been Visited
+			UpdateTex(mx,my-1)								-- Update The Texture To Show Path Cut Out Between Rooms
+			my-=2											-- Move Up (Room Above)
+		end if
+	end if
+
+	UpdateTex(mx,my)										-- Update Current Room
+end procedure
+
+global integer Update_id
+Update_id = routine_id("Update")
+
+procedure Draw()												-- Our Drawing Routine
+atom rect														-- Holds Coordinates Of A Rectangle
+integer window_width, window_height
+
+	rect = allocate(16)
+	if c_func(GetClientRect,{peek4u(window+4), rect}) then end if	-- Get Window Dimensions
+	window_width = peek4u(rect+8) - peek4u(rect)					-- Calculate The Width (Right Side-Left Side)
+	window_height = peek4u(rect+12) - peek4u(rect+4)				-- Calculate The Height (Bottom-Top)
+
+	--Update Our Texture... This Is The Key To The Program's Speed... Much Faster Than Rebuilding The Texture Each Time
+	c_proc(glTexSubImage2D,{GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex_data})
+
+	c_proc(glClear,{GL_COLOR_BUFFER_BIT})					-- Clear Screen
+
+	for loop = 1 to 4 do									-- Loop To Draw Our 4 Views
+		c_proc(glColor3ub,{r[loop],g[loop],b[loop]})		-- Assign Color To Current View
+
+		if  loop = 1 then													-- If We Are Drawing The First Scene
+			-- Set The Viewport To The Top Left.  It Will Take Up Half The Screen Width And Height
+			c_proc(glViewport,{0, window_height/2, window_width/2, window_height/2})
+			c_proc(glMatrixMode,{GL_PROJECTION})								-- Select The Projection Matrix
+			c_proc(glLoadIdentity,{})											-- Reset The Projection Matrix
+			-- Set Up Ortho Mode To Fit 1/4 The Screen (Size Of A Viewport)
+			c_proc(gluOrtho2D,{0, window_width/2, window_height/2, 0})
+		end if
+
+		if loop = 2 then													-- If We Are Drawing The Second Scene
+			-- Set The Viewport To The Top Right.  It Will Take Up Half The Screen Width And Height
+			c_proc(glViewport,{window_width/2, window_height/2, window_width/2, window_height/2})
+			c_proc(glMatrixMode,{GL_PROJECTION})								-- Select The Projection Matrix
+			c_proc(glLoadIdentity,{})											-- Reset The Projection Matrix
+			-- Set Up Perspective Mode To Fit 1/4 The Screen (Size Of A Viewport)
+			c_proc(gluPerspective,{45.0, width/height, 0.1, 500.0}) 
+		end if
+
+		if loop = 3 then													-- If We Are Drawing The Third Scene
+			-- Set The Viewport To The Bottom Right.  It Will Take Up Half The Screen Width And Height
+			c_proc(glViewport,{window_width/2, 0, window_width/2, window_height/2})
+			c_proc(glMatrixMode,{GL_PROJECTION})								-- Select The Projection Matrix
+			c_proc(glLoadIdentity,{})											-- Reset The Projection Matrix
+			-- Set Up Perspective Mode To Fit 1/4 The Screen (Size Of A Viewport)
+			c_proc(gluPerspective,{45.0, width/height, 0.1, 500.0}) 
+		end if
+
+		if loop = 4 then													-- If We Are Drawing The Fourth Scene
+			-- Set The Viewport To The Bottom Left.  It Will Take Up Half The Screen Width And Height
+			c_proc(glViewport,{0, 0, window_width/2, window_height/2})
+			c_proc(glMatrixMode,{GL_PROJECTION})								-- Select The Projection Matrix
+			c_proc(glLoadIdentity,{})											-- Reset The Projection Matrix
+			-- Set Up Perspective Mode To Fit 1/4 The Screen (Size Of A Viewport)
+			c_proc(gluPerspective,{45.0, width/height, 0.1, 500.0}) 
+		end if
+
+		c_proc(glMatrixMode,{GL_MODELVIEW})									-- Select The Modelview Matrix
+		c_proc(glLoadIdentity,{})												-- Reset The Modelview Matrix
+
+		c_proc(glClear,{GL_DEPTH_BUFFER_BIT})									-- Clear Depth Buffer
+
+		if loop = 1 then													-- Are We Drawing The First Image?  (Original Texture... Ortho)
+			c_proc(glBegin,{GL_QUADS})											-- Begin Drawing A Single Quad
+				-- We Fill The Entire 1/4 Section With A Single Textured Quad.
+				c_proc(glTexCoord2f,{1.0, 0.0}) c_proc(glVertex2i,{window_width/2, 0})
+				c_proc(glTexCoord2f,{0.0, 0.0}) c_proc(glVertex2i,{0,0})
+				c_proc(glTexCoord2f,{0.0, 1.0}) c_proc(glVertex2i,{0,window_height/2})
+				c_proc(glTexCoord2f,{1.0, 1.0}) c_proc(glVertex2i,{window_width/2, window_height/2})
+			c_proc(glEnd,{})													-- Done Drawing The Textured Quad
+
+		elsif loop = 2 then													-- Are We Drawing The Second Image?  (3D Texture Mapped Sphere... Perspective)
+			c_proc(glTranslatef,{0.0,0.0,-14.0})								-- Move 14 Units Into The Screen
+
+			c_proc(glRotatef,{xrot,1.0,0.0,0.0})								-- Rotate By xrot On The X-Axis
+			c_proc(glRotatef,{yrot,0.0,1.0,0.0})								-- Rotate By yrot On The Y-Axis
+			c_proc(glRotatef,{zrot,0.0,0.0,1.0})								-- Rotate By zrot On The Z-Axis
+
+			c_proc(glEnable,{GL_LIGHTING})										-- Enable Lighting
+			c_proc(gluSphere,{quadric,4.0,32,32})								-- Draw A Sphere
+			c_proc(glDisable,{GL_LIGHTING})										-- Disable Lighting
+		
+		elsif loop = 3 then													-- Are We Drawing The Third Image?  (Texture At An Anc_proc(e... Perspective)
+			c_proc(glTranslatef,{0.0,0.0,-2.0})								-- Move 2 Units Into The Screen
+			c_proc(glRotatef,{-45.0,1.0,0.0,0.0})							-- Tilt The Quad Below Back 45 Degrees.
+			c_proc(glRotatef,{zrot/1.5,0.0,0.0,1.0})						-- Rotate By zrot/1.5 On The Z-Axis
+
+			c_proc(glBegin,{GL_QUADS})											-- Begin Drawing A Single Quad
+				c_proc(glTexCoord2f,{1.0, 1.0}) c_proc(glVertex3f,{1.0,  1.0, 0.0})
+				c_proc(glTexCoord2f,{0.0, 1.0}) c_proc(glVertex3f,{-1.0,  1.0, 0.0})
+				c_proc(glTexCoord2f,{0.0, 0.0}) c_proc(glVertex3f,{-1.0, -1.0, 0.0})
+				c_proc(glTexCoord2f,{1.0, 0.0}) c_proc(glVertex3f,{1.0, -1.0, 0.0})
+			c_proc(glEnd,{})													-- Done Drawing The Textured Quad
+
+		elsif loop = 4 then													-- Are We Drawing The Fourth Image?  (3D Texture Mapped Cylinder... Perspective)
+			c_proc(glTranslatef,{0.0,0.0,-7.0})								-- Move 7 Units Into The Screen
+			c_proc(glRotatef,{-xrot/2,1.0,0.0,0.0})							-- Rotate By -xrot/2 On The X-Axis
+			c_proc(glRotatef,{-yrot/2,0.0,1.0,0.0})							-- Rotate By -yrot/2 On The Y-Axis
+			c_proc(glRotatef,{-zrot/2,0.0,0.0,1.0})							-- Rotate By -zrot/2 On The Z-Axis
+
+			c_proc(glEnable,{GL_LIGHTING})										-- Enable Lighting
+			c_proc(glTranslatef,{0.0,0.0,-2.0})								-- Translate -2 On The Z-Axis (To Rotate Cylinder Around The Center, Not An End)
+			c_proc(gluCylinder,{quadric,1.5,1.5,4.0,32,16})					-- Draw A Cylinder
+			c_proc(glDisable,{GL_LIGHTING})										-- Disable Lighting
+		end if
+	end for
+
+	c_proc(glFlush,{})															-- Flush The GL Rendering Pipeline
+end procedure
+global integer Draw_id
+Draw_id = routine_id("Draw")

@@ -1,0 +1,20 @@
+You need to provide 
+
+- libglut
+- libGL
+- libGLU
+- avifile (>= 0.60)
+
+Just run 'make' to compile and './lesson35' to start.
+
+The following hotkeys are supported:
+ 
+ e 	toggles environment on/off
+ b	toggles background on/off
+ 0,1,2	different effects
+ q	quits program
+  
+
+Enjoy
+
+Matthias Haack <matthias.haack@epost.de> , 2003

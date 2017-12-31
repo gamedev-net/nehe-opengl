@@ -1,0 +1,32 @@
+# Project: Lesson41
+# Makefile created by Dev-C++ 4.9.8.1
+
+CPP  = g++.exe -D__DEBUG__
+CC   = gcc.exe -D__DEBUG__
+WINDRES = windres.exe
+RES  = 
+OBJ  = Lesson41.o NeHeGL.o $(RES)
+LINKOBJ  = Lesson41.o NeHeGL.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib" -mwindows -lopengl32 -lglu32 -lglaux 
+INCS =  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/include/c++"  -I"C:/Dev-Cpp/include/c++/mingw32"  -I"C:/Dev-Cpp/include/c++/backward"  -I"C:/Dev-Cpp/include" 
+BIN  = Lesson41.exe
+CXXFLAGS = $(CXXINCS)  -O3 -g3
+CFLAGS = $(INCS)  -fmessage-length=0 -O3 -g3
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson41.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(LINKOBJ)
+	$(CPP) $(LINKOBJ) -o "Lesson41.exe" $(LIBS)
+
+Lesson41.o: Lesson41.cpp
+	$(CPP) -c Lesson41.cpp -o Lesson41.o $(CXXFLAGS)
+
+NeHeGL.o: NeHeGL.cpp
+	$(CPP) -c NeHeGL.cpp -o NeHeGL.o $(CXXFLAGS)

@@ -1,0 +1,3 @@
+Before you compile this code make sure that you've copied the headers and libs, like mentioned in the tutorial, in the right directories!
+
+Joachim

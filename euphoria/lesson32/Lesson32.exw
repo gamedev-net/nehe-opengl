@@ -1,0 +1,773 @@
+include get.e
+include dll.e
+include machine.e
+include msgbox.e
+include sort.e   -- for custom_sort()
+include constants.ew
+include GLfunc.ew
+include GLconst.ew
+
+without warning
+
+with trace
+
+atom hRC, hDC, hWnd, hInstance, ClassName, timeticks, old_timeticks
+sequence keys keys = repeat(0,256)  -- array to hold key presses
+
+atom Shot
+Shot = allocate_string("data\\shot.wav")
+
+integer active, fullscreen, retval, mouse_x, mouse_y
+active = TRUE  fullscreen = TRUE  hRC = NULL  hDC = NULL  hWnd = NULL  hInstance = NULL
+mouse_x = 300  mouse_y = 150
+
+integer base, level, miss, kills, score, game
+atom roll
+level = 1  miss = 0  score = 0  kills = 0  roll = 0.0  game = 0
+
+sequence game_object, textures
+game_object = repeat({0,0,0,0,0,0.0,0.0,0.0,0.0},30)
+textures = repeat(0,10)
+for loop = 1 to 10 do
+	textures[loop] = allocate(20)
+end for
+
+integer imageData, bpp, width, height, texID
+imageData = 0  bpp = 4  width = 8  height = 12  texID = 16
+
+integer rot, hit, frame, dir, texid, x, y, spin, distance
+rot = 1  hit = 2  frame = 3  dir = 4  texid = 5  x = 6  y = 7  spin = 8  distance = 9
+
+sequence size
+-- Size Of Each Object: Blueface,  Bucket,   Target,   Coke,     Vase
+size =                 {{1.0,1.0},{1.0,1.0},{1.0,1.0},{0.5,1.0},{0.75,1.5}}
+integer w, h
+w = 1  h = 2
+
+function fread(atom dest, integer size, integer src)
+integer x
+    for loop = 0 to size - 1 do
+        x = getc(src)
+        if x = -1 then
+            mem_set(dest,0,12)
+            return FALSE
+        else
+            poke(dest + loop, x)
+        end if
+    end for
+    return size
+end function
+
+function memcmp(atom l1, atom l2, integer len)
+    for loop = 0 to len - 1 do
+        if peek(l1+loop) != peek(l2+loop) then
+            return FALSE
+        end if
+    end for
+    return TRUE
+end function
+
+function MakeString(atom StringAddress)
+sequence string
+integer i
+string = {}
+i = 0
+    while 1 do
+        if peek(StringAddress+i) = NULL then
+            exit
+        end if
+        string = string & peek(StringAddress+i)
+        i += 1
+    end while
+    return string
+end function
+
+function LoadTGA(atom texture, sequence Filename)
+integer File, bytesPerPixel, imageSize, temp, gl_mode
+atom filename, TGAheader, TGAcompare, header
+    TGAheader= allocate(12)
+    mem_set(TGAheader,0,12)
+    poke(TGAheader+2,2)
+    TGAcompare = allocate(12)
+    header = allocate(6)
+    filename = allocate_string(Filename)
+    gl_mode = GL_RGBA
+
+    File = open(Filename,"rb")
+    if File = -1 or not fread(TGAcompare,12,File) or not memcmp(TGAheader,TGAcompare,12) or
+                    not fread(header, 6, File) then
+        if File = -1 then
+            return FALSE
+        else
+            close(File)
+            return FALSE
+        end if
+    end if
+
+    poke4(texture+width,peek(header+1)*256+peek(header))
+    poke4(texture+height,peek(header+3)*256+peek(header+2))
+
+    if peek4u(texture+width) < 0 or peek4u(texture+width) = 0 or
+       peek4u(texture+height) < 0 or peek4u(texture+height) = 0 or
+       (peek(header+4) != 24 and peek(header+4) != 32) then
+        close(File)
+        return FALSE
+    end if
+
+    poke4(texture + bpp, peek(header + 4))
+    bytesPerPixel = peek4u(texture+bpp)/8
+    imageSize = peek4u(texture+width)*peek4u(texture+height)*bytesPerPixel
+
+    poke4(texture+imageData,allocate(imageSize))
+
+    if peek4u(texture+imageData) = NULL then
+        close(File)
+        return FALSE
+    end if
+    if fread(peek4u(texture+imageData),imageSize,File) != imageSize then
+        close(File)
+        return FALSE
+    end if
+
+    for loop = 0 to imageSize - 1 by bytesPerPixel do
+        temp = peek(peek4u(texture+imageData)+loop)
+        poke(peek4u(texture+imageData)+loop,peek(peek4u(texture+imageData)+loop+2))
+        poke(peek4u(texture+imageData)+loop+2,temp)
+    end for
+
+    close(File)
+
+    -- Build A Texture From The Data
+    c_proc(glGenTextures,{1,texture+texID})
+
+    c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(texture+texID)})
+    c_proc(glTexParameterf,{GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR})
+    c_proc(glTexParameterf,{GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR})
+
+    if peek4u(texture+bpp) = 24 then
+        gl_mode = GL_RGB
+    end if
+
+    c_proc(glTexImage2D,{GL_TEXTURE_2D,0,gl_mode,peek4u(texture+width),peek4u(texture+height),0,
+                         gl_mode,GL_UNSIGNED_BYTE,peek4u(texture+imageData)})
+
+    return TRUE
+end function
+
+procedure BuildFont()
+atom cx, cy
+
+    base = c_func(glGenLists,{95})
+    c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(textures[10]+texID)})
+
+    for loop = 0 to 94 do
+        cx=remainder(loop,16.0)/16.0                      -- X Position Of Current Character
+        cy=floor(loop/16)/8.0                           -- Y Position Of Current Character
+
+        c_proc(glNewList,{base+loop,GL_COMPILE})        -- Start Building A List
+            c_proc(glBegin,{GL_QUADS})                  -- Use A Quad For Each Character
+                c_proc(glTexCoord2f,{cx-.01,1-cy-0.120})   -- Texture Coord (Bottom Left)
+                c_proc(glVertex2i,{0,0})                -- Vertex Coord (Bottom Left)
+                c_proc(glTexCoord2f,{cx+0.0625-.01,1-cy-0.120})    -- Texture Coord (Bottom Right)
+                c_proc(glVertex2i,{16,0})               -- Vertex Coord (Bottom Right)
+                c_proc(glTexCoord2f,{cx+0.0625-.01,1-cy})   -- Texture Coord (Top Right)
+                c_proc(glVertex2i,{16,16})              -- Vertex Coord (Top Right)
+                c_proc(glTexCoord2f,{cx-.01,1-cy})          -- Texture Coord (Top Left)
+                c_proc(glVertex2i,{0,16})                -- Vertex Coord (Top Left)
+            c_proc(glEnd,{})                            -- Done Building Our Quad (Character)
+            c_proc(glTranslated,{10,0,0})               -- Move To The Right Of The Character
+        c_proc(glEndList,{})
+    end for
+end procedure
+
+procedure KillFont()
+    c_proc(glDeleteLists,{base,95})
+end procedure
+
+procedure glPrint(atom x, atom y, sequence text, integer set)
+atom text_loc
+    if set > 1 then
+        set = 1
+    end if
+    text_loc = allocate_string(text)
+	c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(textures[10]+texID)})		-- Select Our Font Texture
+	c_proc(glPushMatrix,{})
+    c_proc(glLoadIdentity,{})
+    c_proc(glTranslated,{x,y,0})
+    c_proc(glListBase,{base-32})
+    c_proc(glCallLists,{length(text),GL_UNSIGNED_BYTE,text_loc})
+    c_proc(glPopMatrix,{})
+    free(text_loc)
+end procedure
+
+function Compare(sequence a, sequence b)
+	return compare(a[distance],b[distance])
+end function
+
+procedure InitObject(integer num)							 			-- Initialize An Object
+ 	game_object[num][rot] = 1											-- Clockwise Rotation
+	game_object[num][frame] = 0											-- Reset The Explosion Frame To Zero
+	game_object[num][hit] = FALSE										-- Reset Object Has Been Hit Status To False
+	game_object[num][texid] = rand(5)									-- Assign A New Texture
+	game_object[num][distance] = -((rand(4001)-1)/100.0)					-- Random Distance
+	game_object[num][y] = -1.5+((rand(450)-1)/100.0)						-- Random Y Position
+	-- Random Starting X Position Based On Distance Of Object And Random Amount For A Delay (Positive Value)
+	game_object[num][x]=((game_object[num][distance]-15.0)/2.0-(5*level))-(rand(5*level)-1)
+	game_object[num][dir]=rand(2)									-- Pick A Random Direction
+
+	if game_object[num][dir] = 1 then										-- Is Random Direction Right
+		game_object[num][rot] = 2										-- Counter Clockwise Rotation
+		game_object[num][x]= -game_object[num][x]							-- Start On The Left Side (Negative Value)
+	end if
+	if game_object[num][texid] = 1 then									-- Blue Face
+		game_object[num][y] = -2.0									-- Always Rolling On The Ground
+	end if
+
+	if game_object[num][texid] = 2 then									-- Bucket
+		game_object[num][dir] = 4										-- Falling Down
+		game_object[num][x] = rand(-floor(game_object[num][distance] - 10))+((game_object[num][distance] - 10.0)/2.0)
+		game_object[num][y] = 4.5 										-- Random X, Start At Top Of The Screen
+	end if
+	if game_object[num][texid] = 3 then									-- Target
+		game_object[num][dir] = 3
+		game_object[num][x] = rand(-floor(game_object[num][distance] - 10))+((game_object[num][distance] - 10.0)/2.0)
+		game_object[num][y] = -3.0 - rand(5*level)			-- Random X, Start Under Ground + Random Value
+	end if
+	-- Sort Objects By Distance
+	game_object = custom_sort(routine_id("Compare"),game_object)
+
+end procedure
+
+procedure ReSizeGLScene(integer width, integer height)
+    if height = 0 then
+        height = 1
+    end if
+    c_proc(glViewport,{0,0,width,height})
+    c_proc(glMatrixMode,{GL_PROJECTION})
+    c_proc(glLoadIdentity,{})
+    c_proc(gluPerspective,{45.0,width/height,1.0,100.0})
+    c_proc(glMatrixMode,{GL_MODELVIEW})
+    c_proc(glLoadIdentity,{})
+end procedure
+
+procedure InitGL()
+
+	if not (LoadTGA(textures[1],"Data/BlueFace.tga")) or		-- Load The BlueFace Texture
+	   not (LoadTGA(textures[2],"Data/Bucket.tga")) or			-- Load The Bucket Texture
+	   not (LoadTGA(textures[3],"Data/Target.tga")) or			-- Load The Target Texture
+	   not (LoadTGA(textures[4],"Data/Coke.tga")) or			-- Load The Coke Texture
+	   not (LoadTGA(textures[5],"Data/Vase.tga")) or			-- Load The Vase Texture
+	   not (LoadTGA(textures[6],"Data/Explode.tga")) or			-- Load The Explosion Texture
+	   not (LoadTGA(textures[7],"Data/Ground.tga")) or			-- Load The Ground Texture
+	   not (LoadTGA(textures[8],"Data/Sky.tga")) or				-- Load The Sky Texture
+	   not (LoadTGA(textures[9],"Data/Crosshair.tga")) or		-- Load The Crosshair Texture
+	   not (LoadTGA(textures[10],"Data/Font.tga"))	then		-- Load The Crosshair Texture
+			puts(1,"LoadTGA failed" & '\n')						-- If Loading Failed, Return False
+	end if
+
+	BuildFont()
+
+    c_proc(glClearColor,{0.0,0.0,0.0,0.0})
+    c_proc(glClearDepth,{1.0})
+    c_proc(glEnable,{GL_DEPTH_TEST})
+    c_proc(glBlendFunc,{GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA})
+    c_proc(glEnable,{GL_BLEND})
+    c_proc(glEnable,{GL_TEXTURE_2D})							-- Enable Texture Mapping
+	c_proc(glEnable,{GL_CULL_FACE})								-- Remove Back Face
+
+	for loop = 1 to 30 do
+		InitObject(loop)
+	end for
+end procedure
+
+procedure DeInitialize()
+	c_proc(glDeleteLists,{base,95})
+end procedure
+
+procedure Object(atom width, atom height, integer texid)				-- Draw Object Using Requested Width, Height And Texture
+	c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(textures[texid]+texID)})		-- Select The Correct Texture
+	c_proc(glBegin,{GL_QUADS})											-- Start Drawing A Quad
+		c_proc(glTexCoord2f,{0.0,0.0}) c_proc(glVertex3f,{-width,-height,0.0})	-- Bottom Left
+		c_proc(glTexCoord2f,{1.0,0.0}) c_proc(glVertex3f,{width,-height,0.0})	-- Bottom Right
+		c_proc(glTexCoord2f,{1.0,1.0}) c_proc(glVertex3f,{width,height,0.0})	-- Top Right
+		c_proc(glTexCoord2f,{0.0,1.0}) c_proc(glVertex3f,{-width,height,0.0})	-- Top Left
+	c_proc(glEnd,{})													-- Done Drawing Quad
+end procedure
+
+procedure Explosion(integer num)											-- Draws An Animated Explosion For Object "num"
+atom ex, ey
+
+	ex = remainder(game_object[num][frame]/4,4)/4.0			-- Calculate Explosion X Frame (0.0f - 0.75f)
+	ey = (game_object[num][frame]/4)/4/4.0					-- Calculate Explosion Y Frame (0.0f - 0.75f)
+
+	c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(textures[6]+texID)})	-- Select The Explosion Texture
+	c_proc(glBegin,{GL_QUADS})											-- Begin Drawing A Quad
+		c_proc(glTexCoord2f,{ex,1.0 - ey}) c_proc(glVertex3f,{-1.0,-1.0,0.0})			-- Bottom Left
+		c_proc(glTexCoord2f,{ex+0.25,1.0 - ey}) c_proc(glVertex3f,{1.0,-1.0,0.0})		-- Bottom Right
+		c_proc(glTexCoord2f,{ex+0.25,1.0 - (ey+0.25)}) c_proc(glVertex3f,{1.0,1.0,0.0})	-- Top Right
+		c_proc(glTexCoord2f,{ex,1.0 - (ey+0.25)}) c_proc(glVertex3f,{-1.0,1.0,0.0})		-- Top Left
+	c_proc(glEnd,{})													-- Done Drawing Quad
+
+	game_object[num][frame] += 1										-- Increase Current Explosion Frame
+	if game_object[num][frame] > 63 then								-- Have We Gone Through All 16 Frames?
+		InitObject(num)													-- Init The Object (Assign New Values)
+	end if
+end procedure
+
+procedure DrawTargets()											-- Draws The Targets (Needs To Be Separate)
+	c_proc(glLoadIdentity,{})									-- Reset The Modelview Matrix
+	c_proc(glTranslatef,{0.0,0.0,-10.0})						-- Move Into The Screen 10 Units
+	for loop = 1 to level do									-- Loop Through Objects
+		c_proc(glLoadName,{loop})								-- Assign Object A Name (ID)
+		c_proc(glPushMatrix,{})									-- Push The Modelview Matrix
+		-- Position The Object (x,y)
+		c_proc(glTranslatef,{game_object[loop][x],game_object[loop][y],game_object[loop][distance]})
+		if game_object[loop][hit] then							-- If Object Has Been Hit
+			Explosion(loop)										-- Draw An Explosion
+		else													-- Otherwise
+			c_proc(glRotatef,{game_object[loop][spin],0.0,0.0,1.0})		-- Rotate The Object
+			Object(size[game_object[loop][texid]][w],size[game_object[loop][texid]][h],game_object[loop][texid])	-- Draw The Object
+		end if
+		c_proc(glPopMatrix,{})											-- Pop The Modelview Matrix
+	end for
+end procedure
+
+function Selection()											-- This Is Where Selection Is Done
+integer hits, choose
+atom depth, viewport, buffer
+
+	viewport = allocate(16)		-- The Size Of The Viewport. [1] Is <x>, [2] Is <y>, [3] Is <length>, [4] Is <width>
+	buffer = allocate(512)										-- Set Up A Selection Buffer
+
+	if game then													-- Is Game Over?
+		return	1												-- If So, Don't Bother Checking For Hits
+	end if
+
+	retval = c_func(PlaySound,{Shot,NULL,SND_ASYNC})		-- Play Gun Shot Sound
+
+	-- This Sets The Array <viewport> To The Size And Location Of The Screen Relative To The Window
+	c_proc(glGetIntegerv,{GL_VIEWPORT, viewport})
+	c_proc(glSelectBuffer,{512, buffer})							-- Tell OpenGL To Use Our Array For Selection
+
+	-- Puts OpenGL In Selection Mode. Nothing Will Be Drawn.  Object ID's and Extents Are Stored In The Buffer.
+	if c_func(glRenderMode,{GL_SELECT}) then end if
+
+	c_proc(glInitNames,{})										-- Initializes The Name Stack
+	c_proc(glPushName,{0})										-- Push 0 (At Least One Entry) Onto The Stack
+
+	c_proc(glMatrixMode,{GL_PROJECTION})						-- Selects The Projection Matrix
+	c_proc(glPushMatrix,{})										-- Push The Projection Matrix
+	c_proc(glLoadIdentity,{})									-- Resets The Matrix
+
+	-- This Creates A Matrix That Will Zoom Up To A Small Portion Of The Screen, Where The Mouse Is.
+	c_proc(gluPickMatrix,{mouse_x,peek4u(viewport+12)-mouse_y,1.0,1.0,viewport})
+
+	-- Apply The Perspective Matrix
+	c_proc(gluPerspective,{45.0,(peek4u(viewport+8)-peek4u(viewport))/(peek4u(viewport+12)-peek4u(viewport+4)),0.1,100.0})
+	c_proc(glMatrixMode,{GL_MODELVIEW})							-- Select The Modelview Matrix
+	DrawTargets()												-- Render The Targets To The Selection Buffer
+	c_proc(glMatrixMode,{GL_PROJECTION})						-- Select The Projection Matrix
+	c_proc(glPopMatrix,{})										-- Pop The Projection Matrix
+	c_proc(glMatrixMode,{GL_MODELVIEW})							-- Select The Modelview Matrix
+	hits = c_func(glRenderMode,{GL_RENDER})						-- Switch To Render Mode, Find Out How Many
+																-- Objects Were Drawn Where The Mouse Was
+	if hits > 0 then											-- If There Were More Than 0 Hits
+		choose = peek4u(buffer+12)								-- Make Our Selection The First Object
+		depth = peek4u(buffer+4)								-- Store How Far Away It Is
+
+		for loop = 1 to hits do					-- Loop Through All The Detected Hits
+			-- If This Object Is Closer To Us Than The One We Have Selected
+			if  peek4u(buffer+((loop-1)*16+4)) <  depth then
+				choose = peek4u(buffer+((loop-1)*16+12))					-- Select The Closer Object
+				depth = peek4u(buffer+((loop-1)*16+4))						-- Store How Far Away It Is
+			end if
+		end for
+
+		if not game_object[choose][hit] then				-- If The Object Hasn't Already Been Hit
+			game_object[choose][hit] = TRUE							-- Mark The Object As Being Hit
+			score += 1											-- Increase Score
+			kills += 1											-- Increase Level Kills
+			if kills > level*5 then									-- New Level Yet?
+				miss = 0											-- Misses Reset Back To Zero
+				kills = 0										-- Reset Level Kills
+				level += 1										-- Increase Level
+				if level > 30 then									-- Higher Than 30?
+					level = 30								-- Set Level To 30 (Are You A God?)
+				end if
+			end if
+		end if
+    end if
+
+    free(viewport)
+    free(buffer)
+
+    return TRUE
+end function
+
+procedure Update(atom milliseconds)									-- Perform Motion Updates Here
+
+	if keys[' '] and game then							-- Space Bar Being Pressed After Game Has Ended?
+		for  loop = 1 to 30 do							-- Loop Through 30 Objects
+			InitObject(loop)							-- Initialize Each Object
+		end for
+		game = FALSE									-- Set game (Game Over) To False
+		score = 0										-- Set score To 0
+		level = 1										-- Set level Back To 1
+		kills = 0										-- Zero Player Kills
+		miss = 0										-- Set miss (Missed Shots) To 0
+	end if
+
+	roll -= milliseconds*0.00005								-- Roll The Clouds
+
+	for  loop = 1 to level do						-- Loop Through The Objects
+		if game_object[loop][rot] = 1 then				-- If Rotation Is Clockwise
+			game_object[loop][spin] -= 0.2 * (loop+milliseconds)	-- Spin Clockwise
+		end if
+		if game_object[loop][rot] = 2 then							-- If Rotation Is Counter Clockwise
+			game_object[loop][spin] += 0.2 * (loop+milliseconds)	-- Spin Counter Clockwise
+		end if
+		if game_object[loop][dir] = 2 then							-- If Direction Is Right
+			game_object[loop][x] += 0.012 * milliseconds			-- Move Right
+		end if
+		if game_object[loop][dir] = 1 then							-- If Direction Is Left
+			game_object[loop][x] -= 0.012 * milliseconds			-- Move Left
+		end if
+		if game_object[loop][dir] = 3 then							-- If Direction Is Up
+			game_object[loop][y] += 0.012 * milliseconds			-- Move Up
+		end if
+		if game_object[loop][dir] = 4 then							-- If Direction Is Down
+			game_object[loop][y] -= 0.0025 * milliseconds			-- Move Down
+		end if
+		-- If We Are Too Far Left, Direction Is Left And The Object Was Not Hit
+		if game_object[loop][x] < (game_object[loop][distance] - 15.0)/2.0 and
+		   game_object[loop][dir] = 1  and  not game_object[loop][hit] then
+				miss += 1											-- Increase miss (Missed Object)
+				game_object[loop][hit] = TRUE						-- Set hit To True To Manually Blow Up The Object
+		end if
+
+		-- If We Are Too Far Right, Direction Is Left And The Object Was Not Hit
+		if game_object[loop][x] > -(game_object[loop][distance] - 15.0)/2.0 and
+		   game_object[loop][dir] = 2 and not game_object[loop][hit] then
+				miss += 1											-- Increase miss (Missed Object)
+				game_object[loop][hit] = TRUE						-- Set hit To True To Manually Blow Up The Object
+		end if
+
+		-- If We Are Too Far Down, Direction Is Down And The Object Was Not Hit
+		if game_object[loop][y] < -2.0 and game_object[loop][dir] = 4 and not game_object[loop][hit] then
+				miss += 1											-- Increase miss (Missed Object)
+				game_object[loop][hit] = TRUE						-- Set hit To True To Manually Blow Up The Object
+		end if
+
+		if game_object[loop][y] > 4.5 and game_object[loop][dir] = 3 then		-- If We Are To Far Up And The Direction Is Up
+			game_object[loop][dir] = 4									-- Change The Direction To Down
+		end if
+	end for
+
+end procedure
+
+function DrawGLScene()
+atom window
+
+	window = allocate(16)
+    c_proc(glClear,{or_bits(GL_COLOR_BUFFER_BIT,GL_DEPTH_BUFFER_BIT)})
+	c_proc(glLoadIdentity,{})											-- Reset The Modelview Matrix
+
+	c_proc(glPushMatrix,{})												-- Push The Modelview Matrix
+	c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(textures[8]+texID)})			-- Select The Sky Texture
+	c_proc(glBegin,{GL_QUADS})											-- Begin Drawing Quads
+		c_proc(glTexCoord2f,{1.0,roll/1.5+1.0}) c_proc(glVertex3f,{28.0,+7.0,-50.0})	-- Top Right
+		c_proc(glTexCoord2f,{0.0,roll/1.5+1.0}) c_proc(glVertex3f,{-28.0,+7.0,-50.0})	-- Top Left
+		c_proc(glTexCoord2f,{0.0,roll/1.5+0.0}) c_proc(glVertex3f,{-28.0,-3.0,-50.0})	-- Bottom Left
+		c_proc(glTexCoord2f,{1.0,roll/1.5+0.0}) c_proc(glVertex3f,{ 28.0,-3.0,-50.0})	-- Bottom Right
+
+		c_proc(glTexCoord2f,{1.5,roll+1.0}) c_proc(glVertex3f,{28.0,+7.0,-50.0})		-- Top Right
+		c_proc(glTexCoord2f,{0.5,roll+1.0}) c_proc(glVertex3f,{-28.0,+7.0,-50.0})		-- Top Left
+		c_proc(glTexCoord2f,{0.5,roll+0.0}) c_proc(glVertex3f,{-28.0,-3.0,-50.0})		-- Bottom Left
+		c_proc(glTexCoord2f,{1.5,roll+0.0}) c_proc(glVertex3f,{ 28.0,-3.0,-50.0})		-- Bottom Right
+
+		c_proc(glTexCoord2f,{1.0,roll/1.5+1.0}) c_proc(glVertex3f,{28.0,+7.0,0.0})	-- Top Right
+		c_proc(glTexCoord2f,{0.0,roll/1.5+1.0}) c_proc(glVertex3f,{-28.0,+7.0,0.0})	-- Top Left
+		c_proc(glTexCoord2f,{0.0,roll/1.5+0.0}) c_proc(glVertex3f,{-28.0,+7.0,-50.0})	-- Bottom Left
+		c_proc(glTexCoord2f,{1.0,roll/1.5+0.0}) c_proc(glVertex3f,{28.0,+7.0,-50.0})	-- Bottom Right
+
+		c_proc(glTexCoord2f,{1.5,roll+1.0}) c_proc(glVertex3f,{28.0,+7.0,0.0})		-- Top Right
+		c_proc(glTexCoord2f,{0.5,roll+1.0}) c_proc(glVertex3f,{-28.0,+7.0,0.0})		-- Top Left
+		c_proc(glTexCoord2f,{0.5,roll+0.0}) c_proc(glVertex3f,{-28.0,+7.0,-50.0})		-- Bottom Left
+		c_proc(glTexCoord2f,{1.5,roll+0.0}) c_proc(glVertex3f,{28.0,+7.0,-50.0})		-- Bottom Right
+	c_proc(glEnd,{})													-- Done Drawing Quads
+
+	c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(textures[7]+texID)})			-- Select The Ground Texture
+	c_proc(glBegin,{GL_QUADS})											-- Draw A Quad
+		c_proc(glTexCoord2f,{7.0,4.0-roll}) c_proc(glVertex3f,{27.0,-3.0,-50.0})	-- Top Right
+		c_proc(glTexCoord2f,{0.0,4.0-roll}) c_proc(glVertex3f,{-27.0,-3.0,-50.0})	-- Top Left
+		c_proc(glTexCoord2f,{0.0,0.0-roll}) c_proc(glVertex3f,{-27.0,-3.0,0.0})	-- Bottom Left
+		c_proc(glTexCoord2f,{7.0,0.0-roll}) c_proc(glVertex3f,{27.0,-3.0,0.0})	-- Bottom Right
+	c_proc(glEnd,{})													-- Done Drawing Quad
+
+	DrawTargets()														-- Draw Our Targets
+	c_proc(glPopMatrix,{})												-- Pop The Modelview Matrix
+
+	-- Crosshair (In Ortho View)
+	if c_func(GetClientRect,{hWnd,window}) then end if					-- Get Window Dimensions
+	c_proc(glMatrixMode,{GL_PROJECTION})								-- Select The Projection Matrix
+	c_proc(glPushMatrix,{})												-- Store The Projection Matrix
+	c_proc(glLoadIdentity,{})											-- Reset The Projection Matrix
+	c_proc(glOrtho,{0,peek4u(window+8),0,peek4u(window+12),-1,1})		-- Set Up An Ortho Screen
+	c_proc(glMatrixMode,{GL_MODELVIEW})									-- Select The Modelview Matrix
+	c_proc(glTranslated,{mouse_x,peek4u(window+12)-mouse_y,0.0})		-- Move To The Current Mouse Position
+	Object(16,16,9)														-- Draw The Crosshair
+
+	-- Game Stats / Title
+	glPrint(240,450,"NeHe Productions",1)						-- Print Title
+	glPrint(10,10,sprintf("Level: %d",level),1)							-- Print Level
+	glPrint(250,10,sprintf("Score: %d",score),1)							-- Print Score
+
+	if miss > 9 then													-- Have We Missed 10 Objects?
+		miss = 9													-- Limit Misses To 10
+		game = TRUE												-- Game Over TRUE
+	end if
+
+	if game then													-- Is Game Over?
+		glPrint(490,10,"GAME OVER",1)							-- Game Over Message
+	else
+		glPrint(490,10,sprintf("Morale: %d/10",10-miss),1)				-- Print Morale #/10
+	end if
+	c_proc(glMatrixMode,{GL_PROJECTION})								-- Select The Projection Matrix
+	c_proc(glPopMatrix,{})												-- Restore The Old Projection Matrix
+	c_proc(glMatrixMode,{GL_MODELVIEW})									-- Select The Modelview Matrix
+
+	c_proc(glFlush,{})													-- Flush The GL Rendering Pipeline
+
+    return TRUE
+end function
+
+integer dmScreenSettings, WindowRect
+
+procedure KillGLWindow()
+    if fullscreen then
+        if c_func(ChangeDisplaySettingsA,{NULL,0}) then end if
+        if c_func(ShowCursor,{TRUE}) then end if
+    end if
+    if hRC then
+        if c_func(wglMakeCurrent,{NULL,NULL}) then end if
+        if c_func(wglDeleteContext,{hRC}) then end if
+        hRC = NULL
+    end if
+    if hRC and not c_func(ReleaseDC,{hWnd,hDC}) then
+        hDC = NULL
+    end if
+    if hWnd and not c_func(DestroyWindow,{hWnd}) then
+        hWnd = NULL
+    end if
+    if dmScreenSettings then
+        free(dmScreenSettings)
+    end if
+    free(WindowRect)
+end procedure
+
+function WndProc(atom hWnd, integer uMsg, atom wParam, atom lParam)
+    if uMsg = WM_ACTIVATE then
+        if not floor(wParam/#10000) then
+            active = TRUE
+        else
+            active = FALSE
+        end if
+    elsif  uMsg = WM_SYSCOMMAND then
+        if wParam = SC_SCREENSAVE then end if
+        if wParam = SC_MONITORPOWER then end if
+    elsif uMsg = WM_CLOSE then
+        c_proc(PostQuitMessage,{0})
+    elsif uMsg = WM_KEYDOWN then
+        keys[wParam] = TRUE
+    elsif uMsg = WM_KEYUP then
+        keys[wParam] = FALSE
+    elsif uMsg = WM_SIZE then
+        ReSizeGLScene(and_bits(lParam,#FFFF),floor(lParam/#10000))
+    elsif uMsg = WM_LBUTTONDOWN then
+    		mouse_x = and_bits(lParam,#FFFF)
+    		mouse_y = floor(lParam/#10000)
+    		if Selection() then end if
+    elsif uMsg = WM_MOUSEMOVE then
+    		mouse_x = and_bits(lParam,#FFFF)
+    		mouse_y = floor(lParam/#10000)
+    end if
+    return c_func(DefWindowProcA,{hWnd, uMsg, wParam, lParam})
+end function
+
+integer wc wc = allocate(40)
+function ClassRegistration()
+integer WndProcAddress, id
+    id = routine_id("WndProc")
+    if id = -1 then
+    puts(1, "routine_id failed!\n")
+    abort(1)
+    end if
+    WndProcAddress = call_back(id)
+    hInstance = c_func(GetModuleHandleA,{NULL})
+    ClassName = allocate_string("OpenGL")
+    poke4(wc,or_all({CS_HREDRAW, CS_VREDRAW, CS_OWNDC}))
+    poke4(wc+4,WndProcAddress)
+    poke4(wc+8,0)
+    poke4(wc+12,0)
+    poke4(wc+16,hInstance)
+    poke4(wc+20,c_func(LoadIconA,{NULL,IDI_WINLOGO}))
+    poke4(wc+24,c_func(LoadCursorA,{NULL, IDC_ARROW}))
+    poke4(wc+28,NULL)
+    poke4(wc+32,NULL)
+    poke4(wc+36,ClassName)
+    if not c_func(RegisterClassA,{wc}) then
+        retval = message_box("Failed to register class","Error", or_bits(MB_OK,MB_ICONINFORMATION))
+        return FALSE
+    else
+        return TRUE
+    end if
+end function
+
+integer regd regd = FALSE
+procedure CreateGLWindow(atom title, integer width, integer height, integer bits, integer fullscreenflag)
+    atom PixelFormat, pfd, dwExStyle, dwStyle
+    sequence s
+    if regd = FALSE then
+        if ClassRegistration() then
+            regd = TRUE
+        end if
+    end if
+    retval = c_func(ShowCursor,{FALSE})
+    fullscreen = fullscreenflag
+    if fullscreen then
+        dmScreenSettings = allocate(156)
+        mem_set(dmScreenSettings,0,156)
+        s = int_to_bytes(156)
+        poke(dmScreenSettings + 36,{s[1],s[2]})
+        poke4(dmScreenSettings + 40,or_all({DM_BITSPERPEL,DM_PELSWIDTH,DM_PELSHEIGHT}))
+        poke4(dmScreenSettings + 104, bits)
+        poke4(dmScreenSettings + 108, width)
+        poke4(dmScreenSettings + 112, height)
+        if c_func(ChangeDisplaySettingsA,{dmScreenSettings,CDS_FULLSCREEN}) != DISP_CHANGE_SUCCESSFUL then
+            if message_box("The requested fullscreen mode is not supported by\nyour video card. " &
+                           "Use windowed mode instead?","Error", or_bits(MB_YESNO,MB_ICONEXCLAMATION)) = IDYES then
+            else
+                retval = message_box("Program will now close","Error",or_bits(MB_OK,MB_ICONSTOP))
+            end if
+        end if
+    else
+        dmScreenSettings = NULL
+    end if
+    if fullscreen then
+        dwExStyle = WS_EX_APPWINDOW
+        dwStyle = WS_POPUP
+        if c_func(ShowCursor,{FALSE}) then end if
+    else
+        dwExStyle = or_bits(WS_EX_APPWINDOW,WS_EX_WINDOWEDGE)
+        dwStyle = WS_OVERLAPPEDWINDOW
+    end if
+    WindowRect = allocate(16)
+    poke4(WindowRect,0)
+    poke4(WindowRect + 4,0)
+    poke4(WindowRect + 8, width)
+    poke4(WindowRect + 12, height)
+    retval = c_func(AdjustWindowRectEx,{WindowRect, dwStyle, FALSE, dwExStyle})
+    hWnd = c_func(CreateWindowExA,{dwExStyle,  --extended window style
+                                   ClassName,  --class
+                                   title,      --window caption
+                                   or_all({WS_CLIPSIBLINGS,WS_CLIPCHILDREN,dwStyle}),  --window style
+                                   0,
+                                   0,
+                                   peek4u(WindowRect + 8) - peek4u(WindowRect),
+                                   peek4u(WindowRect + 12) - peek4u(WindowRect + 4),
+                                   NULL,
+                                   NULL,
+                                   hInstance,
+                                   NULL})
+    if hWnd = NULL then
+        KillGLWindow()
+        retval = message_box("Window creation error","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    pfd = allocate(40)  --PIXELFORMATDESCRIPTOR
+    mem_set(pfd,0,40)
+    poke(pfd, 40)  --size of pfd structure
+    poke(pfd + 2, 1) --version
+    poke4(pfd + 4, or_all({PFD_DRAW_TO_WINDOW,PFD_SUPPORT_OPENGL,PFD_DOUBLEBUFFER})) --properties flags
+    poke(pfd + 8, PFD_TYPE_RGBA)  --request an rgba format
+    poke(pfd + 9, 24)  --select color depth
+    poke(pfd + 23, 24)  --32bit Z-buffer
+
+    hDC = c_func(GetDC,{hWnd})  --create GL device context to match window device context
+    if not hDC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL device context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    PixelFormat = c_func(ChoosePixelFormat,{hDC,pfd})  --find a pixel format matching PIXELFORMATDESCRIPTOR
+    if not PixelFormat then
+        KillGLWindow()
+        retval = message_box("Can't find a suitable pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(SetPixelFormat,{hDC,PixelFormat,pfd})) then  --set the pixel format
+        KillGLWindow()
+        retval = message_box("Can't set the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not c_func(DescribePixelFormat, {hDC,PixelFormat,40,pfd}) then
+        retval = message_box("Can't describe the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    hRC = c_func(wglCreateContext,{hDC})  --create GL rendering context
+    if not hRC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(wglMakeCurrent,{hDC,hRC})) then  --make the GL rendering context active
+        KillGLWindow()
+        retval = message_box("Can't activate the GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    retval = c_func(ShowWindow,{hWnd,SW_SHOW}) --show the window
+    retval = c_func(SetForegroundWindow,{hWnd}) --set it to always be in foreground
+    retval = c_func(SetFocus,{hWnd}) --give it focus
+    ReSizeGLScene(width, height)  --draw the GL scene to match the window size
+    InitGL()  --initialize OpenGL
+    old_timeticks = c_func(GetTickCount,{})
+end procedure
+
+integer MSG MSG = allocate(28)
+integer title title = allocate_string("OpenGL")
+procedure WinMain()
+integer done, msg_message
+    done = FALSE
+    if message_box("Would you like to run in fullscreen mode?","Start Fullscreen?",or_bits(MB_YESNO,MB_ICONQUESTION)) = IDNO then
+        fullscreen = FALSE
+    else
+        fullscreen = TRUE
+    end if
+    CreateGLWindow(title,640,480,24,fullscreen)
+    while not done do
+        if c_func(PeekMessageA,{MSG,NULL,0,0,PM_REMOVE}) then
+            msg_message = peek4u(MSG+4)
+            if msg_message = WM_QUIT then
+                done = TRUE
+            else
+                retval = c_func(TranslateMessage,{MSG})
+                retval = c_func(DispatchMessageA,{MSG})
+            end if
+        else
+            if ((active and not DrawGLScene()) or keys[VK_ESCAPE]) then
+                done = TRUE
+            else
+                retval = c_func(SwapBuffers,{hDC})
+                if keys[VK_F1] then
+                    keys[VK_F1] = FALSE
+                    KillGLWindow()
+                    if fullscreen = 0 then
+                        fullscreen = 1
+                    else
+                        fullscreen = 0
+                    end if
+                    CreateGLWindow(title,640,480,24,fullscreen)
+                end if
+            end if
+        end if
+    	timeticks = c_func(GetTickCount,{})
+		Update(timeticks - old_timeticks)
+		old_timeticks = timeticks
+    end while
+    KillGLWindow()
+end procedure
+
+WinMain()

@@ -1,0 +1,18 @@
+;from this tut, i use the new include file of Hardcode, so
+;this file is different from other tuts.
+
+DM_BITSPERPEL       = 00040000h
+DM_PELSWIDTH        = 00080000h
+DM_PELSHEIGHT       = 00100000h
+
+_GL_DPUSH_FIX MACRO
+ mov eax,eax
+ mov ebx,ebx
+ENDM
+
+_glClearDepth MACRO t                   ;this is not defined in hardcode's include files
+    gl_dpush t                          ;so here it is.
+    _GL_DPUSH_FIX
+    call glClearDepth
+ENDM
+

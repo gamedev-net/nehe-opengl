@@ -1,0 +1,35 @@
+# Project: Lesson46
+# Makefile created by Dev-C++ 4.9.9.0
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = ARB_Multisample.o Lesson46.o NeHeGL.o $(RES)
+LINKOBJ  = ARB_Multisample.o Lesson46.o NeHeGL.o $(RES)
+LIBS =  -L"C:/Develop/DevCpp/lib" -mwindows -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32 -lopengl32 -lglu32 -lglaux  
+INCS =  -I"C:/Develop/DevCpp/include" 
+CXXINCS =  -I"C:/Develop/DevCpp/include/c++"  -I"C:/Develop/DevCpp/include/c++/mingw32"  -I"C:/Develop/DevCpp/include/c++/backward"  -I"C:/Develop/DevCpp/include" 
+BIN  = Lesson46.exe
+CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS  
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS  
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson46.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "Lesson46.exe" $(LIBS)
+
+ARB_Multisample.o: ARB_Multisample.cpp
+	$(CPP) -c ARB_Multisample.cpp -o ARB_Multisample.o $(CXXFLAGS)
+
+Lesson46.o: Lesson46.cpp
+	$(CPP) -c Lesson46.cpp -o Lesson46.o $(CXXFLAGS)
+
+NeHeGL.o: NeHeGL.cpp
+	$(CPP) -c NeHeGL.cpp -o NeHeGL.o $(CXXFLAGS)

@@ -1,0 +1,7 @@
+# Microsoft Developer Studio Generated Dependency File, included by Lesson5.mak
+
+.\lesson5.f90 : \
+	".\Release\OpenGL_W.mod"\
+	{$(INCLUDE)}"opengl_gl.mod"\
+	{$(INCLUDE)}"opengl_glu.mod"\
+	

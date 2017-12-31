@@ -1,0 +1,122 @@
+This is the Solaris port of NeHe's OpenGL tutorial.
+Port done by Lakmal Gunasekara 1999.
+It's mainly based on the Linux Port from Richard Campbell.
+
+-----------------------------------------------------------
+
+Usage:
+
+make 
+
+This will build the tutorial you actually have (lesson1, lesson2...)
+Check if your software installation is ok (see below):
+
+-----------------------------------------------------------
+
+
+Hardware requirements:
+
+- A SPARC based workstation (up to today Sun didn't port OpenGL on Solaris x86)
+
+- A framebuffer. If possible accelerated. I've tested the examples also on
+  non-accelerated framebuffers. They work (but slow).
+
+-----------------------------------------------------------
+  
+Software requirements:
+
+Hint: Your LD_LIBRARY_PATH should look something like this:
+
+> echo $LD_LIBRARY_PATH
+/usr/lib:/usr/openwin/lib:/usr/dt/lib:/usr/local/lib:/usr/local/sparc_solaris/glut-3.7/lib/glut
+
+Otherwise Solaris is not able to find your runtime libraries. This is not a default
+YOU have to set it!
+
+Operating system:
+
+- Solaris 7 (I've used Solaris 7 (SUNOS 5.7) maybe it also runs under 2.6 or 2.5.1)
+  Install the patches for OpenGL! You find them where you get OpenGL from.
+
+OpenGL:
+
+- OpenGL Version 1.1.2.
+
+(I've used that. The examples should run also on newer versions of OpenGL).
+
+If you don't have it already you may download it from:
+
+http://www.sun.com/solaris/opengl
+
+You need the runtime version (libGL.so...) AND the development version (header files).
+
+But I think OpenGL is shipped with Solaris these days. Look on your CD.
+
+Check to see if everything nessesary is there:
+
+> cd /usr/openwin/lib
+> ls libGL*
+
+should print:
+libGL.so@     libGLU.so@    libGLw.so@
+libGL.so.1*   libGLU.so.1*  libGLw.so.1*
+
+> cd /usr/openwin/include/GL
+> ls 
+
+should print:
+gl.h          glu.h         glxmd.h       glxtokens.h
+glmacros.h    glx.h         glxproto.h
+
+GLUT:
+
+- GLUT 3.7beta. 
+
+GLUT is NOT shipped by Sun. You can download the precompiled source tree from:
+
+http://reality.sgi.com/opengl/glut3/glut3.html#sun
+
+There is a 32bit and a 64bit version. I've used 32bit. This definitly works.
+I've installed GLUT in /usr/local. There the makefiles expect the library to find.
+
+
+OpenWindows (X11 implementation of Sun):
+
+I've used OpenWindows 3.6.1. If you've installed OpenGL for Sun it should also install
+the enhancements for the X-Server XSun from Sun.
+
+I've tested these examples on non-OpenGL accelerated framebuffers in Sun workstations.
+It worked well (but slow).
+
+gcc:
+
+- gcc 2.8.1.
+
+You can get it from http://www.sunfreeware.com. It's pretty easy to install.
+
+I ran a 64 bit kernel. Compilation was not a problem with this compiler version.
+
+Known bugs:
+
+Non-OpenGL accelerated framebuffers don't like GLUT_ALPHA. Therefore I've deleted
+it in the source. 
+
+Changed:
+
+glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA); 
+
+to 
+
+glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);   
+
+
+Contact:
+
+If you have problems, or have useful hints, email me at lakmal@gunasekara.de.
+
+Credits:
+Jeff Molofee (nehe@home.com) for writing the tutorials.
+Richard Campbell (ulmont@bellsouth.net) for doing the linux port.
+
+- Lakmal Gunasekara 1999
+

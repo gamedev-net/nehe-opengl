@@ -1,0 +1,29 @@
+struct appdata 
+{
+	float4 position : POSITION;
+	float4 color	: COLOR0;
+	float3 wave	: COLOR1;
+};
+
+struct vfconn
+{
+	float4 HPos	: POSITION;
+	float4 Col0	: COLOR0;
+};
+
+vfconn main(appdata IN,	uniform float4x4 ModelViewProj)
+{
+	vfconn OUT;			// Variable to handle our output from the vertex
+					// shader (goes to a fragment shader if available).
+
+	// Change The Y Position Of The Vertex Based On Sine Waves
+	IN.position.y = ( sin(IN.wave.x + (IN.position.x / 5.0) ) + sin(IN.wave.x + (IN.position.z / 4.0) ) ) * 2.5f;
+	
+	// Transform The Vertex Position Into Homogenous Clip-Space (Required)
+	OUT.HPos = mul(ModelViewProj, IN.position);
+
+	// Set The Color To The Value Specified In IN.color
+	OUT.Col0.xyz = IN.color.xyz;
+
+	return OUT;
+}

@@ -1,0 +1,37 @@
+Readme for NeHe's OpenGL Tutorial Lesson10 Linux/GLX port
+==========================================================
+
+Compilation:
+
+make
+
+Running:
+
+./lesson10
+
+Requirements:
+
+- OpenGL headers and libraries 
+- Xserver with GLX and XF86VidMode extensions (I used version 4.0.1)
+- gcc (any other ANSI C compiler should do it too; I used gcc 2.95.2)
+
+Release Notes:
+
+- keyhandling mostly rewritten for this lesson to make movement smoother. Note
+  that we listen for key-release events in this lesson.
+
+Known bugs/issues:
+
+- since we do not perform any timing stuff, the value-changes done through 
+  keypresses have to be adjusted to the machine speed to be sensible
+- does not stop drawing even if iconified (though it is not visible)
+- does not explicitly select color depth
+
+Contact:
+
+If you have any problems, comments, or have useful hints, 
+email to Mihael.Vrbanec@stud.uni-karlsruhe.de
+
+Credits:
+Jeff Molofee (nehe@connect.ab.ca) for writing the tutorials.
+Mihael Vrbanec for the port to Linux/GLX and ANSI C

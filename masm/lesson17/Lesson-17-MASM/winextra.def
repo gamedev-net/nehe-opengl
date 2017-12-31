@@ -1,0 +1,291 @@
+;* (C) hardCode | http://bizarrecreations.webjump.com
+
+;->|Id: WinExtra\winextra.def ver 1.1 | 23.12.1999
+;  | - added makeMemPtr, __push/popRegs, __save/restoreWorkingRegs macros
+;  | - added SETBITFIELD macro
+;  | - added _WINX_REGSAFETY flag
+;  | - optimized ZeroMemory, memcpy
+;  |   (ptrs to local vars should be prefixed with & )
+;  | - fixed return macro
+
+IFNDEF _WIN32_EXTRA_DEFS_
+_WIN32_EXTRA_DEFS_=1
+
+include unicode.def
+
+IFNDEF SNDMSG
+ SNDMSG MACRO hWnd, Umsg, wPrm, lPrm
+  invoke SendMessage, hWnd, Umsg, wPrm, lPrm
+ ENDM
+ENDIF
+
+IFNDEF _WINX_REGSAFETY
+ _WINX_REGSAFETY=1
+ENDIF
+
+makeMemPtr MACRO reg,mem
+LOCAL tmp
+ IF ((OPATTR(reg)) AND 10h) EQ 0
+  .err <WinX: makeMemPtr requires first param to be CPU register>
+ ENDIF
+
+ tmp SUBSTR <mem>,1,1
+ IFIDNI tmp,<&>
+   tmp SUBSTR <mem>,2
+   lea reg,&tmp
+ ELSEIF ((OPATTR(mem)) AND 16h) ; register(10h), const(4) or [mem](2)
+   mov reg,mem
+ ELSE
+   .err <WinX: invalid memory reference>
+ ENDIF
+ENDM
+
+__pushRegs MACRO regList:VARARG
+LOCAL x
+ IRP x,<regList>
+  IF ((OPATTR(&x)) AND 10h)
+   push x
+  ELSE
+  .err <WinX: expecting CPU register>
+  ENDIF
+ ENDM
+ENDM
+
+__popRegs MACRO regList:VARARG
+LOCAL x
+ IRP x,<regList>
+  IF ((OPATTR(&x)) AND 10h)
+   pop x
+  ELSE
+  .err <WinX: expecting CPU register>
+  ENDIF
+ ENDM
+ENDM
+
+__saveWorkingRegs MACRO regList:VARARG
+ IF _WINX_REGSAFETY
+  __pushRegs <regList>
+ ENDIF
+ENDM
+
+__restoreWorkingRegs MACRO regList:VARARG
+ IF _WINX_REGSAFETY
+  __popRegs <regList>
+ ENDIF
+ENDM
+
+
+ZeroMemory MACRO dest,count
+ __saveWorkingRegs edi
+ makeMemPtr edi,&dest
+ sub eax,eax
+ IF ((OPATTR(count)) AND 4) ; const
+   IF ((count AND 3) EQ 0)
+    mov ecx,count/4
+    rep stosd
+   ELSEIF ((count AND (NOT 3)) EQ 0)
+    mov ecx,count
+    rep stosb
+   ELSE
+    mov ecx,count/4
+    rep stosd
+    mov cl,count AND 3
+    rep stosb
+   ENDIF
+ ELSEIF ((OPATTR(count)) AND 12h) ; register or [mem]
+   mov ecx,count
+   shr ecx,2
+   db 0F2h
+   stosd
+   mov ecx,count
+   and cl,3
+   db 0F2h
+   stosb
+ ENDIF
+ __restoreWorkingRegs edi
+ENDM
+
+memcpy MACRO dest,src,count
+LOCAL tmp
+ __saveWorkingRegs edi,esi
+
+ makeMemPtr edi,&dest
+ makeMemPtr esi,&src
+
+ IF ((OPATTR(count)) AND 4) ; const
+   IF ((count AND 3) EQ 0)
+    mov ecx,count/4
+    rep movsd
+   ELSEIF ((count AND (NOT 3)) EQ 0)
+    mov ecx,count
+    rep movsb
+   ELSE
+    mov ecx,count/4
+    rep stosd
+    mov cl,count AND 3
+    rep stosb
+   ENDIF
+ ELSEIF ((OPATTR(count)) AND 12h) ; register or [mem]
+   mov ecx,count
+   shr ecx,2
+   db 0F2h
+   movsd
+   mov ecx,count
+   and cl,3
+   db 0F2h
+   movsb
+ ENDIF
+
+ __restoreWorkingRegs esi,edi
+ENDM
+
+
+return MACRO param
+ IF (param EQ 0)
+  sub eax,eax
+  ret
+ ELSEIF (param EQ 1)
+  sub eax,eax
+  inc eax
+  ret
+ ELSEIF (param EQ -1)
+  sub eax,eax
+  dec eax
+  ret
+ ELSE
+  mov eax,param
+  ret
+ ENDIF
+ENDM
+
+
+SETBITFIELD MACRO base,fieldID,value
+local masque,x,nshifts,isReg,I,wordsize
+ masque=MASK fieldID
+ x=masque
+ nshifts=0
+ REPT 33
+  IF (x AND 1)
+   EXITM
+  ENDIF
+  nshifts=nshifts+1
+  x=x SHR 1
+ ENDM
+ and base,NOT masque
+ isReg=FALSE
+  IRP I,<ax,bx,cx,dx,di,si,bp>
+   IFIDNI <value>,<I>
+     isReg=TRUE
+     wordsize TEXTEQU <word>
+     EXITM
+   ENDIF
+   IFIDNI <value>,<e&&I>
+     isReg=TRUE
+     wordsize TEXTEQU <dword>
+     EXITM
+   ENDIF
+  ENDM
+  IF NOT(isReg)
+    IRP I,<al,bl,cl,dl,ah,bh,ch,dh>
+     IFIDNI <value>,<I>
+       isReg=TRUE
+       wordsize TEXTEQU <byte>
+       EXITM
+     ENDIF 
+    ENDM
+  ENDIF
+ IF (isReg)
+   shl value,nshifts
+   and value,masque
+   or wordsize ptr base,value
+ ELSE
+  IF value
+    or base,(value SHL nshifts) AND masque
+  ENDIF
+ ENDIF
+ENDM
+
+
+GetFPUFlags MACRO
+ fnstsw ax
+ sahf
+ENDM
+
+
+GenericErrMsg MACRO hWnd,ErrMsg
+LOCAL loc,errtxt,boxhdr
+ jmp loc
+ defstring boxhdr,'Error'
+ defstring errtxt,&ErrMsg
+loc:
+ invoke MessageBox,hWnd,offset errtxt,offset boxhdr,MB_OK
+ENDM
+
+GenericErrMsgW MACRO hWnd,ErrMsg
+LOCAL loc,errtxt,boxhdr
+ jmp loc
+ defstringW boxhdr,'Error'
+ defstringW errtxt,&ErrMsg
+loc:
+ invoke MessageBoxW,hWnd,offset errtxt,offset boxhdr,MB_OK
+ENDM
+
+GenericErrMsgA MACRO hWnd,ErrMsg
+LOCAL loc,errtxt,boxhdr
+ jmp loc
+ defstringA boxhdr,'Error'
+ defstringA errtxt,&ErrMsg
+loc:
+ invoke MessageBoxA,hWnd,offset errtxt,offset boxhdr,MB_OK
+ENDM
+
+DISPLAYMSG_TITLE textequ <'Error'>
+
+DISPLAYMSG MACRO errMsg
+LOCAL loc,errtxt,boxhdr
+ jmp loc
+ defstring boxhdr,%DISPLAYMSG_TITLE
+ defstring errtxt,&errMsg
+loc:
+ invoke MessageBox,NULL,offset errtxt,offset boxhdr,MB_OK
+ENDM
+
+__makeNumLabel MACRO lbl,num
+ lbl&num:
+ENDM
+
+__setNumVarVal MACRO name,id,val
+ name&id = val
+ENDM
+
+__getNumVarVal MACRO name,id
+ LOCAL tStr
+ tStr CATSTR <name>,<id>
+EXITM %tStr
+ENDM
+
+__setTxtVarVal MACRO name,id,val
+ name&id textequ <val>
+ENDM
+
+__num2string MACRO num
+ LOCAL tStr
+ tStr textequ <num>
+EXITM %tStr
+ENDM
+
+_enum MACRO enumID,enumList:VARARG
+LOCAL x,cnt
+ enumID typedef DWORD
+ cnt=0
+ IRP x,<enumList>
+  x=cnt
+  cnt=cnt+1
+ ENDM
+ENDM
+
+define MACRO id,val
+ id = val
+ENDM
+
+ENDIF ;// _WIN32_EXTRA_DEFS_

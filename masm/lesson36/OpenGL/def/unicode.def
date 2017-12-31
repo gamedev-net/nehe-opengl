@@ -1,0 +1,87 @@
+;* Unicode/Ansi support for MASM
+;* (C) hardCode | http://bizarrecreations.webjump.com
+
+
+; TODO: add escape sequences (?)
+
+IFNDEF _UNICODE_ANSI_
+_UNICODE_ANSI_=1
+
+
+IFDEF UNICODE
+ __char typedef WCHAR
+ELSE
+ __char typedef BYTE
+ENDIF
+
+_pokechar MACRO chr
+ __char '&chr&'
+ENDM
+
+_pokecharW MACRO chr
+ WCHAR '&chr&'
+ENDM
+
+_pokecharA MACRO chr
+ BYTE '&chr&'
+ENDM
+
+deftxtlabel MACRO lbl
+ lbl LABEL __char
+ENDM
+
+defstring MACRO lbl,txt
+LOCAL txtSize,chrPtr,chr
+ deftxtlabel lbl
+ txtSize SIZESTR <txt>
+ chrPtr=2
+ REPT (txtSize-2)
+  chr SUBSTR <txt>,chrPtr,1
+  _pokechar %chr
+  chrPtr=chrPtr+1
+ ENDM
+ __char 0 ;; zero-terminated
+ENDM
+
+defstringW MACRO lbl,txt
+LOCAL txtSize,chrPtr,chr
+ deftxtlabel lbl
+ txtSize SIZESTR <txt>
+ chrPtr=2
+ REPT (txtSize-2)
+  chr SUBSTR <txt>,chrPtr,1
+  _pokecharW %chr
+  chrPtr=chrPtr+1
+ ENDM
+ WCHAR 0 ;; zero-terminated
+ENDM
+
+defstringA MACRO lbl,txt
+LOCAL txtSize,chrPtr,chr
+ deftxtlabel lbl
+ txtSize SIZESTR <txt>
+ chrPtr=2
+ REPT (txtSize-2)
+  chr SUBSTR <txt>,chrPtr,1
+  _pokecharA %chr
+  chrPtr=chrPtr+1
+ ENDM
+ BYTE 0 ;; zero-terminated
+ENDM
+
+
+_XDEF MACRO ProcName,ProtoDef
+ LOCAL ProcA,ProcW
+  ProcA CATSTR <ProcName>,<A>
+  ProcW CATSTR <ProcName>,<W>
+  ProcA PROTO ProtoDef
+  ProcW PROTO ProtoDef
+  IFDEF UNICODE
+    ProcName TEXTEQU <ProcW>
+  ELSE
+    ProcName TEXTEQU <ProcA>
+  ENDIF
+ENDM
+  
+
+ENDIF ;//_UNICODE_ANSI_

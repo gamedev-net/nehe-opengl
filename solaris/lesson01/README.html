@@ -1,0 +1,112 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.6 [en] (X11; I; SunOS 5.7 sun4u) [Netscape]">
+</head>
+<body text="#FFFFFF" bgcolor="#000000" link="#0000EE" vlink="#551A8B" alink="#FF0000">
+
+<center><b><u><font color="#FFFF00"><font size=+2>This is the Solaris port
+of NeHe's OpenGL tutorial.</font></font></u></b></center>
+
+<blockquote>
+<blockquote>&nbsp;
+<br>Port done by Lakmal Gunasekara 1999.
+<br>It's mainly based on the Linux Port from Richard Campbell.
+<p>
+<hr WIDTH="100%">
+<br>Usage:
+<p><b>make</b>
+<p>This will build the tutorial you actually have (lesson1, lesson2...)
+<br>Check if your software installation is ok (see below):
+<p>
+<hr WIDTH="100%">
+<p><b>Hardware requirements:</b>
+<br>&nbsp;
+<blockquote>
+<li>
+A SPARC based workstation (up to today Sun didn't port OpenGL on Solaris
+x86)</li>
+
+<li>
+A framebuffer. If possible accelerated. I've tested the examples also on&nbsp;
+non-accelerated framebuffers. They work (but slow).</li>
+</blockquote>
+
+<hr WIDTH="100%">
+<p><b>Software requirements:</b>
+<p><i>Hint: Your LD_LIBRARY_PATH should look something like this:</i>
+<p><i>> echo $LD_LIBRARY_PATH</i>
+<br><i>/usr/lib:/usr/openwin/lib:/usr/dt/lib:/usr/local/lib:/usr/local/sparc_solaris/glut-3.7/lib/glut</i>
+<p><i>Otherwise Solaris is not able to find your runtime libraries. This
+is not a default</i>
+<br><i>YOU have to set it!</i>
+<p><b>Operating system:</b>
+<p>- Solaris 7 (I've used Solaris 7 (SUNOS 5.7) maybe it also runs under
+2.6 or 2.5.1)
+<br>&nbsp; Install the patches for OpenGL! You find them where you get
+OpenGL from.
+<p><b>OpenGL:</b>
+<p>- OpenGL Version 1.1.2.
+<p>(I've used that. The examples should run also on newer versions of OpenGL).
+<p>If you don't have it already you may download it from:
+<p><a href="http://www.sun.com/solaris/opengl">http://www.sun.com/solaris/opengl</a>
+<p>You need the runtime version (libGL.so...) AND the development version
+(header files).
+<p>But I think OpenGL is shipped with Solaris these days. Look on your
+CD.
+<p>Check to see if everything nessesary is there:
+<p>> cd /usr/openwin/lib
+<br>> ls libGL*
+<p>should print:
+<br>libGL.so@&nbsp;&nbsp;&nbsp;&nbsp; libGLU.so@&nbsp;&nbsp;&nbsp; libGLw.so@
+<br>libGL.so.1*&nbsp;&nbsp; libGLU.so.1*&nbsp; libGLw.so.1*
+<p>> cd /usr/openwin/include/GL
+<br>> ls
+<p>should print:
+<br>gl.h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glu.h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+glxmd.h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glxtokens.h
+<br>glmacros.h&nbsp;&nbsp;&nbsp; glx.h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+glxproto.h
+<p><b>GLUT:</b>
+<p>- GLUT 3.7beta.
+<p>GLUT is NOT shipped by Sun. You can download the precompiled source
+tree from:
+<p><a href="http://reality.sgi.com/opengl/glut3/glut3.html#sun">http://reality.sgi.com/opengl/glut3/glut3.html#sun</a>
+<p>There is a 32bit and a 64bit version. I've used 32bit. This definitly
+works.
+<br>I've installed GLUT in /usr/local. There the makefiles expect the library
+to find.
+<br>&nbsp;
+<p>OpenWindows (X11 implementation of Sun):
+<p>I've used OpenWindows 3.6.1. If you've installed OpenGL for Sun it should
+also install
+<br>the enhancements for the X-Server XSun from Sun.
+<p>I've tested these examples on non-OpenGL accelerated framebuffers in
+Sun workstations.
+<br>It worked well (but slow).
+<p><b>gcc:</b>
+<p>- gcc 2.8.1.
+<p>You can get it from <a href="http://www.sunfreeware.com">http://www.sunfreeware.com</a>.
+It's pretty easy to install.
+<p>I ran a 64 bit kernel. Compilation was not a problem with this compiler
+version.
+<p>Known bugs:
+<p>Non-OpenGL accelerated framebuffers don't like GLUT_ALPHA. Therefore
+I've deleted
+<br>it in the source.
+<p>Changed:
+<p>glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA);
+<p>to
+<p>glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+<br>&nbsp;
+<p><b>Contact:</b>
+<p>If you have problems, or have useful hints, email me at lakmal@gunasekara.de.
+<p>Credits:
+<br>Jeff Molofee (nehe@home.com) for writing the tutorials.
+<br>Richard Campbell (ulmont@bellsouth.net) for doing the linux port.
+<p>- Lakmal Gunasekara 1999</blockquote>
+</blockquote>
+
+</body>
+</html>

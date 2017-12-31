@@ -1,0 +1,73 @@
+Usage:
+
+make lessonX
+
+(where X is numeric)
+to build tutorials 1-n individually.
+
+Use:
+
+make all
+
+to build all tutorials at once.
+
+Requirements:
+
+Mesa (I used version 3.1beta)
+Requires Mesa, Mesa's version of GLUT, and 
+the headers and libraries.  I used the rpms from 
+http://www.rpmfind.net (Mesa 3.1beta, Mesa GLUT3.1beta, 
+Mesa-devel 3.1beta, Mesa GLUT-devel 3.1beta, but you can 
+get mesa directly from http://www.mesa3d.org .
+
+X (I used version 3.3.5)
+I used the rpms from http://www.rpmfind.net, but 
+you can get X directly from http://www.xfree86.org .
+
+gcc (I used egcs 2.91.66)
+I used the rpms from http://www.rpmfind.net, but 
+you can get egcs/gcc directly from http://egcs.cygnus.com/ .
+
+For tutorials 14 and 15, FreeType and GLTT are required.
+FreeType is a clone of Apple's TrueType fonts.  I used
+the rpms from http://www.rpmfind.net, but you can get
+FreeType directly from http://www.freetype.org.
+GLTT is an opengl graphics library designed specifically
+for 3d fonts and texture fonts.  I used the rpms from 
+http://www.rpmfind.net, but you can get GLTT directly 
+from http://moonlight3d.org/gltt/.
+
+Known bugs/issues:
+
+Non motif window managers (including fvwm95 and whatever 
+gnome uses) don't honor the window hints used to request
+full screen.
+
+Some TNT cards (or possibly mesa 3.0) don't like the alpha
+buffer.  The fix is to change the line:
+
+glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA); 
+
+to 
+glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);   
+
+Redhat 6.0 installs (and possibly others) use
+a library called MesaGLU instead of just GLU.
+To correct, change the LIBRARIES line in the 
+makefile to have -lMesaGLU instead of -lGLU.
+
+Contact:
+
+If you have problems, comments, or have useful hints, 
+email me at ulmont@bellsouth.net.
+
+Credits:
+Jeff Molofee (nehe@home.com) for writing the tutorials.
+Alfred (alfred@mazuma.net.au) for various fixes and improvements.
+Lakmal Gunasekara (gunasekara@prostep.de) for a Solaris/SPARC
+	and SGI/IRIX port, which has improved the portability
+	of the code base.  Also for tutorial 8, which I only
+	tweaked slightly (basically uncommented what had been
+	commented out for Solaris).
+
+-Richard Campbell.

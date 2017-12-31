@@ -1,0 +1,9 @@
+#include "\masm32\include\resource.h"
+
+101 DIALOGEX 0,0,476,291
+FONT 8,"Tahoma"
+STYLE 0x90000800
+EXSTYLE 0x00000000
+BEGIN
+
+END

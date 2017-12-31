@@ -1,0 +1,204 @@
+include dll.e
+include machine.e
+
+global constant TRUE = 1, FALSE = 0
+global constant 
+	--A
+		 ANSI_CHARSET = 0, ANTIALIASED_QUALITY = 4,
+	--B 
+		 BLACK_BRUSH = 4, 
+	--C
+		 CCS_ADJUSTABLE = #0020, CDS_FULLSCREEN = #00000004, CLIP_DEFAULT_PRECIS = 0, CLR_DEFAULT = #FF000000, 
+		 COLOR_WINDOW = #5, CS_HREDRAW = #0002, CS_OWNDC = #0020, CS_VREDRAW = #0001,
+	--D
+		 DEFAULT_PITCH = 0, DISP_CHANGE_SUCCESSFUL = 0, DM_BITSPERPEL = #00040000, DM_PELSHEIGHT = #00100000,
+		 DM_PELSWIDTH = #00080000,
+	--E
+		 EOF = -1,
+	--F
+		 FF_DONTCARE = 0, FW_BOLD = 700,
+	--G
+		 GRAY_BRUSH = 2, GWL_USERDATA = -21,
+	--I
+         ICC_BAR_CLASSES = #00000004, IDC_ARROW = 32512, IDI_WINLOGO = 32517, ILC_COLOR8 = #0008, IMAGE_BITMAP = 0,
+    --L
+         LR_CREATEDIBSECTION = #2000, LR_LOADFROMFILE = #0010, LTGRAY_BRUSH = 1,
+    --N 
+         NULL_BRUSH = 5,
+    --O      
+         OUT_TT_PRECIS = 4,
+    --P      
+         PFD_DOUBLEBUFFER = #00000001, PFD_DRAW_TO_WINDOW = #00000004, PFD_SUPPORT_OPENGL = #00000020,
+         PFD_TYPE_RGBA = 0, PM_REMOVE = #0001,
+    --S     
+         SC_MONITORPOWER = #F170, SC_SCREENSAVE = #F140, SIZE_MAXIMIZED = #2, SIZE_MINIMIZED = #1,
+         SIZE_RESTORED = #0, SM_CXSCREEN = 0, SM_CYSCREEN = 1, SND_ASYNC = #1, SND_LOOP = #8, SND_SYNC = #0,
+         SW_NORMAL = 1, SW_SHOW = 5, SYMBOL_CHARSET = 1,
+    --T     
+         TB_ADDBUTTONS = #0414, TB_BUTTONSTRUCTSIZE = #041E, TBSTATE_ENABLED = #04,
+    --V     
+         VK_ADD = #6B, VK_DOWN = #28, VK_ESCAPE = #1B, VK_F1 = #70, VK_LEFT = #25, VK_NEXT = #22,
+         VK_NUMPAD1 = #61, VK_NUMPAD2 = #62, VK_NUMPAD3 = #63, VK_NUMPAD4 = #64, VK_NUMPAD5 = #65,
+         VK_NUMPAD6 = #66, VK_NUMPAD7 = #67, VK_NUMPAD8 = #68, VK_NUMPAD9 = #69, VK_NUMPAD0 = #60, VK_PRIOR = #21,
+         VK_RETURN = #0D, VK_RIGHT = #27, VK_SPACE = #20, VK_SUBTRACT = #6D, VK_TAB = #09,VK_UP = #26,
+    --W      
+         WGL_FONT_POLYGONS = 1, WHITE_BRUSH = 0, WM_ACTIVATE = #0006, WM_CLOSE = #0010, WM_COMMAND = #0111,
+         WM_CREATE = #0001, WM_DISPLAYCHANGE = #007E, WM_ERASEBKGND = #14, WM_KEYDOWN = #0100,WM_KEYUP = #0101,
+         WM_LBUTTONDOWN = #0201, WM_MOUSEMOVE = #0200, WM_PAINT = #0F, WM_QUIT = #0012, WM_SIZE = #0005,
+         WM_SYSCOMMAND = #0112, WM_USER = #0400, WS_CHILD = #40000000, WS_POPUP = #80000000, WS_CAPTION = #00C00000,
+         WS_CLIPCHILDREN = #02000000, WS_CLIPSIBLINGS = #04000000, WS_EX_APPWINDOW = #00040000, WS_EX_TOPMOST = #8,
+         WS_EX_WINDOWEDGE = #00000100, WS_MINIMIZEBOX = #00020000, WS_MAXIMIZEBOX = #00010000, 
+         WS_OVERLAPPED = #00000000, WS_OVERLAPPEDWINDOW = #00CF0000, WS_SYSMENU = #00080000, WS_THICKFRAME = #00040000 
+         
+         
+
+
+
+procedure not_found(sequence name)
+    puts(1,'\n' & "Couldn't find " & name & '\n')
+    while get_key() != 'n' do end while
+    abort(1)
+end procedure
+
+global function or_all(sequence s)
+-- or together all elements of a sequence
+    atom result
+
+    result = 0
+    for i = 1 to length(s) do
+    result = or_bits(result, s[i])
+    end for
+    return result
+end function
+
+function link_c_func(atom dll, sequence name, sequence args, atom result)
+-- dynamically link a C routine as a phoria function
+    integer handle
+
+    handle = define_c_func(dll, name, args, result)
+    if handle = -1 then
+    not_found(name)
+    else
+    return handle
+    end if
+end function
+
+function link_c_proc(atom dll, sequence name, sequence args)
+-- dynamically link a C routine as a phoria function
+    integer handle
+
+    handle = define_c_proc(dll, name, args)
+    if handle = -1 then
+    not_found(name)
+    else
+    return handle
+    end if
+end function
+
+global integer AdjustWindowRectEx, AppendMenu, ChangeDisplaySettingsA, ChoosePixelFormat, CreateFont, CreateMenu,
+               CreatePopupMenu, CreateWindowExA, DefWindowProcA, DeleteObject, DestroyWindow, DescribePixelFormat,
+               DispatchMessageA, FormatMessage, GetClientRect, GetDC, GetDeviceCaps, GetLastError, GetModuleHandle,
+               GetMonitorInfo, GetObject, GetStockObject, GetSystemMetrics, GetTickCount, ImageList_Add, 
+               ImageList_AddIcon, ImageList_Create, InitCommonControlsEx, InsertMenuItem, ImageList_LoadImage,
+               LoadBitmap, LoadCursorA, LoadIconA, LoadImage, MonitorFromWindow, PlaySound, PostMessage, PostQuitMessage,
+               PeekMessageA, QueryPerformanceCounter, QueryPerformanceFrequency, RegisterClassA, RegisterClassExA,
+               ReleaseDC, SendMessage, SetFocus, SetForegroundWindow, SetMenu, SetPixelFormat, SetWindowLong,
+               SelectObject, SetWindowText, ShowCursor, ShowWindow, Sleep, SwapBuffers, TranslateMessage,
+               UnregisterClassA, WaitMessage,
+
+               timeGetTime
+
+procedure link_dll_routines()
+    atom kernel32, user32, gdi32, winmm, comctl
+
+    kernel32 = open_dll("kernel32.dll")
+    if kernel32 = NULL then
+        not_found("kernel32.dll")
+    end if
+
+    user32 = open_dll("user32.dll")
+    if user32 = NULL then
+        not_found("user32.dll")
+    end if
+
+    gdi32 = open_dll("gdi32.dll")
+    if gdi32 = NULL then
+        not_found("gdi32.dll")
+    end if
+
+    winmm = open_dll("winmm.dll")
+    if winmm = NULL then
+        not_found("winmm.dll")
+    end if
+
+    comctl = open_dll("comctl32.dll")
+    if comctl = NULL then
+        not_found("comctl32.dll")
+    end if
+
+
+    AdjustWindowRectEx = link_c_func(user32, "AdjustWindowRectEx", {C_POINTER,C_DOUBLE,C_INT,C_DOUBLE}, C_INT)
+    AppendMenu = link_c_func(user32, "AppendMenuA", {C_UINT, C_UINT, C_UINT, C_POINTER}, C_INT)
+    ChangeDisplaySettingsA = link_c_func(user32, "ChangeDisplaySettingsA", {C_POINTER,C_INT}, C_INT)
+    ChoosePixelFormat = link_c_func(gdi32, "ChoosePixelFormat", {C_POINTER,C_POINTER}, C_INT)
+    CreateFont = link_c_func(gdi32, "CreateFontA", {C_INT,C_INT,C_INT,C_INT,C_INT,C_UINT,C_UINT,C_UINT,C_UINT,
+                                                    C_UINT,C_UINT,C_UINT,C_UINT,C_POINTER}, C_INT)
+    CreateMenu = link_c_func(user32, "CreateMenu", {},C_INT)
+    CreatePopupMenu = link_c_func(user32, "CreatePopupMenu", {},C_INT)
+    CreateWindowExA = link_c_func(user32, "CreateWindowExA", {C_INT,C_POINTER,C_POINTER,C_INT,C_INT,C_INT,
+                                                              C_INT,C_INT,C_POINTER,C_POINTER,C_POINTER,C_POINTER}, C_INT)
+    DefWindowProcA = link_c_func(user32, "DefWindowProcA", {C_POINTER,C_INT,C_INT,C_INT}, C_INT)
+    DeleteObject = link_c_func(gdi32, "DeleteObject", {C_POINTER}, C_INT)
+    DescribePixelFormat = link_c_func(gdi32, "DescribePixelFormat", {C_POINTER, C_INT, C_UINT, C_POINTER}, C_INT)
+    DestroyWindow = link_c_func(user32, "DestroyWindow", {C_POINTER}, C_LONG)
+    DispatchMessageA = link_c_func(user32, "DispatchMessageA", {C_POINTER}, C_INT)
+    FormatMessage = link_c_func(kernel32, "FormatMessageA",{C_INT,C_POINTER,C_INT,C_INT,C_POINTER,C_INT,C_POINTER},C_INT)
+    GetClientRect = link_c_func(user32, "GetClientRect", {C_UINT,C_POINTER}, C_INT)
+    GetDC = link_c_func(user32, "GetDC", {C_POINTER}, C_INT)
+    GetDeviceCaps = link_c_func(gdi32, "GetDeviceCaps", {C_POINTER,C_INT},C_INT)
+    GetLastError = link_c_func(kernel32, "GetLastError",{},C_INT)
+    GetModuleHandle = link_c_func(kernel32, "GetModuleHandleA", {C_POINTER}, C_INT)
+    GetMonitorInfo = link_c_func(user32, "GetMonitorInfoA", {C_INT, C_POINTER}, C_INT)
+    GetObject = link_c_func(gdi32, "GetObjectA", {C_INT,C_INT,C_POINTER}, C_INT)
+    GetStockObject = link_c_func(gdi32, "GetStockObject", {C_INT}, C_INT)
+    GetSystemMetrics = link_c_func(user32, "GetSystemMetrics", {C_INT}, C_INT)
+    GetTickCount = link_c_func(kernel32, "GetTickCount", {}, C_UINT)
+    ImageList_Add = link_c_func(comctl, "ImageList_Add", {C_POINTER, C_INT, C_POINTER}, C_INT)
+    ImageList_AddIcon = link_c_func(comctl, "ImageList_AddIcon", {C_INT,C_INT},C_INT)
+    ImageList_Create = link_c_func(comctl, "ImageList_Create", {C_INT,C_INT,C_UINT,C_INT,C_INT},C_INT)
+    ImageList_LoadImage = link_c_func(comctl, "ImageList_LoadImage", {C_INT,C_POINTER,C_INT,C_INT,C_UINT,C_UINT,C_UINT},C_INT)
+    InitCommonControlsEx = link_c_func(comctl, "InitCommonControlsEx", {C_LONG}, C_INT)
+    InsertMenuItem = link_c_func(user32, "InsertMenuItemA", {C_INT,C_UINT,C_INT,C_POINTER},C_INT)
+    LoadCursorA = link_c_func(user32, "LoadCursorA", {C_POINTER,C_POINTER}, C_INT)
+    LoadIconA = link_c_func(user32, "LoadIconA", {C_POINTER,C_POINTER}, C_INT)
+    LoadImage = link_c_func(user32, "LoadImageA", {C_POINTER,C_POINTER,C_UINT,C_INT,C_INT,C_UINT},C_INT)
+    MonitorFromWindow = link_c_func(user32, "MonitorFromWindow", {C_INT,C_DOUBLE},C_INT)
+    PeekMessageA = link_c_func(user32, "PeekMessageA", {C_POINTER,C_POINTER,C_UINT,C_UINT,C_UINT},C_INT)
+    PlaySound = link_c_func(winmm, "PlaySound", {C_POINTER,C_INT,C_DOUBLE},C_INT)
+    PostMessage = link_c_func(user32, "PostMessageA", {C_INT,C_INT,C_INT,C_INT},C_INT)
+    PostQuitMessage = link_c_proc(user32, "PostQuitMessage", {C_INT})
+    QueryPerformanceCounter = link_c_func(kernel32, "QueryPerformanceCounter", {C_POINTER}, C_INT)
+    QueryPerformanceFrequency = link_c_func(kernel32, "QueryPerformanceFrequency", {C_POINTER}, C_INT)
+    RegisterClassA = link_c_func(user32, "RegisterClassA", {C_POINTER}, C_INT)
+    RegisterClassExA = link_c_func(user32, "RegisterClassExA", {C_POINTER}, C_INT)
+    ReleaseDC = link_c_func(user32, "ReleaseDC", {C_POINTER,C_INT}, C_INT)
+    SelectObject = link_c_func(gdi32, "SelectObject", {C_INT,C_INT},C_INT)
+    SendMessage = link_c_func(user32, "SendMessageA", {C_POINTER,C_UINT,C_LONG,C_LONG},C_LONG)
+    SetFocus = link_c_func(user32, "SetFocus", {C_POINTER}, C_INT)
+    SetForegroundWindow = link_c_func(user32, "SetForegroundWindow", {C_POINTER}, C_INT)
+    SetMenu = link_c_func(user32, "SetMenu", {C_UINT,C_UINT},C_INT)
+    SetPixelFormat = link_c_func(gdi32, "SetPixelFormat", {C_POINTER, C_INT, C_POINTER}, C_INT)
+    SetWindowText = link_c_proc(user32, "SetWindowTextA", {C_POINTER,C_POINTER})
+    SetWindowLong = link_c_func(user32, "SetWindowLongA", {C_INT,C_INT,C_POINTER},C_INT)
+    ShowCursor = link_c_func(user32, "ShowCursor", {C_INT}, C_INT)
+    ShowWindow = link_c_func(user32, "ShowWindow", {C_POINTER, C_INT}, C_INT)
+    Sleep = link_c_proc(kernel32, "Sleep", {C_INT})
+    SwapBuffers = link_c_func(gdi32, "SwapBuffers", {C_INT}, C_INT)
+    TranslateMessage = link_c_func(user32, "TranslateMessage", {C_POINTER}, C_INT)
+    UnregisterClassA = link_c_func(user32, "UnregisterClassA", {C_POINTER,C_POINTER}, C_LONG)
+    WaitMessage = link_c_proc(user32, "WaitMessage", {})
+
+    timeGetTime = link_c_func(winmm, "timeGetTime", {}, C_UINT)
+
+end procedure
+link_dll_routines()

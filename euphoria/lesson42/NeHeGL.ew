@@ -1,0 +1,29 @@
+include get.e
+include dll.e
+include machine.e
+include msgbox.e
+include constants.ew
+include GLfunc.ew
+include GLconst.ew
+
+
+global function GL_Window()
+atom window
+	window = allocate(56)
+	return window
+end function
+
+-- GL_Window +  0 = *keys
+-- GL_Window +  4 = hWnd
+-- GL_Window +  8 = hDC
+-- GL_Window + 12 = hRC
+-- GL_Window + 16 = init.*application  (application + 0 = hInstance, application + 4 = *className)
+-- GL_Window + 20 = init.title
+-- GL_Window + 24 = init.width
+-- GL_Window + 28 = init.height
+-- GL_Window + 32 = init.bitsPerPixel
+-- GL_Window + 36 = init.isFullScreen
+-- GL_Window + 40 = isVisible
+-- GL_Window + 44 = hrTimer
+-- GL_Window + 48 = lastTickCount
+-- GL_Window + 52 = timerResolution

@@ -1,0 +1,7 @@
+Before you can compile the source in this archive you need to download the headers glext.h and wglext. Because of copyright issues they are not included in this archive.
+Have a look at http://www.opengl.org/developers/faqs/technical/extensions.htm 
+At the very end (23.090) you'll find the links to these files.
+
+That's all... 
+
+Joachim

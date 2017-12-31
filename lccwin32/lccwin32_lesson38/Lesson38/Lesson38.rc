@@ -1,0 +1,8 @@
+// Modified for LCCWin32 compiler by Robert Wishlaw 2002/11/24
+
+#include "windows.h"
+#include "resource.h"
+IDB_BUTTERFLY1 BITMAP DISCARDABLE "Data\\Butterfly1.bmp"
+IDB_BUTTERFLY2 BITMAP DISCARDABLE "Data\\Butterfly2.bmp"
+IDB_BUTTERFLY3 BITMAP DISCARDABLE "Data\\Butterfly3.bmp"
+

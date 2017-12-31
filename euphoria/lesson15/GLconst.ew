@@ -1,0 +1,1010 @@
+-- Version --
+global constant GL_VERSION_1_1 = 1
+
+-- AccumOp --
+global constant GL_ACCUM  = #0100
+global constant GL_LOAD   = #0101
+global constant GL_RETURN = #0102
+global constant GL_MULT   = #0103
+global constant GL_ADD    = #0104
+
+-- AlphaFunction --
+global constant GL_NEVER    = #0200
+global constant GL_LESS     = #0201
+global constant GL_EQUAL    = #0202
+global constant GL_LEQUAL   = #0203
+global constant GL_GREATER  = #0204
+global constant GL_NOTEQUAL = #0205
+global constant GL_GEQUAL   = #0206
+global constant GL_ALWAYS   = #0207
+
+-- AttribMask --
+global constant GL_CURRENT_BIT         = #00000001
+global constant GL_POINT_BIT           = #00000002
+global constant GL_LINE_BIT            = #00000004
+global constant GL_POLYGON_BIT         = #00000008
+global constant GL_POLYGON_STIPPLE_BIT = #00000010
+global constant GL_PIXEL_MODE_BIT      = #00000020
+global constant GL_LIGHTING_BIT        = #00000040
+global constant GL_FOG_BIT             = #00000080
+global constant GL_DEPTH_BUFFER_BIT    = #00000100
+global constant GL_ACCUM_BUFFER_BIT    = #00000200
+global constant GL_STENCIL_BUFFER_BIT  = #00000400
+global constant GL_VIEWPORT_BIT        = #00000800
+global constant GL_TRANSFORM_BIT       = #00001000
+global constant GL_ENABLE_BIT          = #00002000
+global constant GL_COLOR_BUFFER_BIT    = #00004000
+global constant GL_HINT_BIT            = #00008000
+global constant GL_EVAL_BIT            = #00010000
+global constant GL_LIST_BIT            = #00020000
+global constant GL_TEXTURE_BIT         = #00040000
+global constant GL_SCISSOR_BIT         = #00080000
+global constant GL_ALL_ATTRIB_BITS     = #000FFFFF
+
+-- BeginMode --
+global constant GL_POINTS         = #0000
+global constant GL_LINES          = #0001
+global constant GL_LINE_LOOP      = #0002
+global constant GL_LINE_STRIP     = #0003
+global constant GL_TRIANGLES      = #0004
+global constant GL_TRIANGLE_STRIP = #0005
+global constant GL_TRIANGLE_FAN   = #0006
+global constant GL_QUADS          = #0007
+global constant GL_QUAD_STRIP     = #0008
+global constant GL_POLYGON        = #0009
+
+-- BlendingFactorDest --
+global constant GL_ZERO                = 0
+global constant GL_ONE                 = 1
+global constant GL_SRC_COLOR           = #0300
+global constant GL_ONE_MINUS_SRC_COLOR = #0301
+global constant GL_SRC_ALPHA           = #0302
+global constant GL_ONE_MINUS_SRC_ALPHA = #0303
+global constant GL_DST_ALPHA           = #0304
+global constant GL_ONE_MINUS_DST_ALPHA = #0305
+
+-- BlendingFactorSrc --
+global constant GL_DST_COLOR           = #0306
+global constant GL_ONE_MINUS_DST_COLOR = #0307
+global constant GL_SRC_ALPHA_SATURATE  = #0308
+
+-- Boolean --
+global constant GL_TRUE  = 1
+global constant GL_FALSE = 0
+
+-- ClipPlaneName --
+global constant GL_CLIP_PLANE0 = #3000
+global constant GL_CLIP_PLANE1 = #3001
+global constant GL_CLIP_PLANE2 = #3002
+global constant GL_CLIP_PLANE3 = #3003
+global constant GL_CLIP_PLANE4 = #3004
+global constant GL_CLIP_PLANE5 = #3005
+
+-- DataType --
+global constant GL_BYTE           = #1400
+global constant GL_UNSIGNED_BYTE  = #1401
+global constant GL_SHORT          = #1402
+global constant GL_UNSIGNED_SHORT = #1403
+global constant GL_INT            = #1404
+global constant GL_UNSIGNED_INT   = #1405
+global constant GL_FLOAT          = #1406
+global constant GL_2_BYTES        = #1407
+global constant GL_3_BYTES        = #1408
+global constant GL_4_BYTES        = #1409
+global constant GL_DOUBLE         = #140A
+
+-- DrawBufferMode --
+global constant GL_NONE           = 0
+global constant GL_FRONT_LEFT     = #0400
+global constant GL_FRONT_RIGHT    = #0401
+global constant GL_BACK_LEFT      = #0402
+global constant GL_BACK_RIGHT     = #0403
+global constant GL_FRONT          = #0404
+global constant GL_BACK           = #0405
+global constant GL_LEFT           = #0406
+global constant GL_RIGHT          = #0407
+global constant GL_FRONT_AND_BACK = #0408
+global constant GL_AUX0           = #0409
+global constant GL_AUX1           = #040A
+global constant GL_AUX2           = #040B
+global constant GL_AUX3           = #040C
+
+-- ErrorCode --
+global constant GL_NO_ERROR          = 0
+global constant GL_INVALID_ENUM      = #0500
+global constant GL_INVALID_VALUE     = #0501
+global constant GL_INVALID_OPERATION = #0502
+global constant GL_STACK_OVERFLOW    = #0503
+global constant GL_STACK_UNDERFLOW   = #0504
+global constant GL_OUT_OF_MEMORY     = #0505
+
+-- FeedBackMode --
+global constant GL_2D               = #0600
+global constant GL_3D               = #0601
+global constant GL_3D_COLOR         = #0602
+global constant GL_3D_COLOR_TEXTURE = #0603
+global constant GL_4D_COLOR_TEXTURE = #0604
+
+-- FeedBackToken --
+global constant GL_PASS_THROUGH_TOKEN = #0700
+global constant GL_POINT_TOKEN        = #0701
+global constant GL_LINE_TOKEN         = #0702
+global constant GL_POLYGON_TOKEN      = #0703
+global constant GL_BITMAP_TOKEN       = #0704
+global constant GL_DRAW_PIXEL_TOKEN   = #0705
+global constant GL_COPY_PIXEL_TOKEN   = #0706
+global constant GL_LINE_RESET_TOKEN   = #0707
+
+-- FogMode --
+global constant GL_EXP  = #0800
+global constant GL_EXP2 = #0801
+
+-- FrontFaceDirection --
+global constant GL_CW  = #0900
+global constant GL_CCW = #0901
+
+-- GetMapTarget --
+global constant GL_COEFF  = #0A00
+global constant GL_ORDER  = #0A01
+global constant GL_DOMAIN = #0A02
+
+-- GetTarget --
+global constant GL_CURRENT_COLOR                 = #0B00
+global constant GL_CURRENT_INDEX                 = #0B01
+global constant GL_CURRENT_NORMAL                = #0B02
+global constant GL_CURRENT_TEXTURE_COORDS        = #0B03
+global constant GL_CURRENT_RASTER_COLOR          = #0B04
+global constant GL_CURRENT_RASTER_INDEX          = #0B05
+global constant GL_CURRENT_RASTER_TEXTURE_COORDS = #0B06
+global constant GL_CURRENT_RASTER_POSITION       = #0B07
+global constant GL_CURRENT_RASTER_POSITION_VALID = #0B08
+global constant GL_CURRENT_RASTER_DISTANCE       = #0B09
+global constant GL_POINT_SMOOTH                  = #0B10
+global constant GL_POINT_SIZE                    = #0B11
+global constant GL_POINT_SIZE_RANGE              = #0B12
+global constant GL_POINT_SIZE_GRANULARITY        = #0B13
+global constant GL_LINE_SMOOTH                   = #0B20
+global constant GL_LINE_WIDTH                    = #0B21
+global constant GL_LINE_WIDTH_RANGE              = #0B22
+global constant GL_LINE_WIDTH_GRANULARITY        = #0B23
+global constant GL_LINE_STIPPLE                  = #0B24
+global constant GL_LINE_STIPPLE_PATTERN          = #0B25
+global constant GL_LINE_STIPPLE_REPEAT           = #0B26
+global constant GL_LIST_MODE                     = #0B30
+global constant GL_MAX_LIST_NESTING              = #0B31
+global constant GL_LIST_BASE                     = #0B32
+global constant GL_LIST_INDEX                    = #0B33
+global constant GL_POLYGON_MODE                  = #0B40
+global constant GL_POLYGON_SMOOTH                = #0B41
+global constant GL_POLYGON_STIPPLE               = #0B42
+global constant GL_EDGE_FLAG                     = #0B43
+global constant GL_CULL_FACE                     = #0B44
+global constant GL_CULL_FACE_MODE                = #0B45
+global constant GL_FRONT_FACE                    = #0B46
+global constant GL_LIGHTING                      = #0B50
+global constant GL_LIGHT_MODEL_LOCAL_VIEWER      = #0B51
+global constant GL_LIGHT_MODEL_TWO_SIDE          = #0B52
+global constant GL_LIGHT_MODEL_AMBIENT           = #0B53
+global constant GL_SHADE_MODEL                   = #0B54
+global constant GL_COLOR_MATERIAL_FACE           = #0B55
+global constant GL_COLOR_MATERIAL_PARAMETER      = #0B56
+global constant GL_COLOR_MATERIAL                = #0B57
+global constant GL_FOG                           = #0B60
+global constant GL_FOG_INDEX                     = #0B61
+global constant GL_FOG_DENSITY                   = #0B62
+global constant GL_FOG_START                     = #0B63
+global constant GL_FOG_END                       = #0B64
+global constant GL_FOG_MODE                      = #0B65
+global constant GL_FOG_COLOR                     = #0B66
+global constant GL_DEPTH_RANGE                   = #0B70
+global constant GL_DEPTH_TEST                    = #0B71
+global constant GL_DEPTH_WRITEMASK               = #0B72
+global constant GL_DEPTH_CLEAR_VALUE             = #0B73
+global constant GL_DEPTH_FUNC                    = #0B74
+global constant GL_ACCUM_CLEAR_VALUE             = #0B80
+global constant GL_STENCIL_TEST                  = #0B90
+global constant GL_STENCIL_CLEAR_VALUE           = #0B91
+global constant GL_STENCIL_FUNC                  = #0B92
+global constant GL_STENCIL_VALUE_MASK            = #0B93
+global constant GL_STENCIL_FAIL                  = #0B94
+global constant GL_STENCIL_PASS_DEPTH_FAIL       = #0B95
+global constant GL_STENCIL_PASS_DEPTH_PASS       = #0B96
+global constant GL_STENCIL_REF                   = #0B97
+global constant GL_STENCIL_WRITEMASK             = #0B98
+global constant GL_MATRIX_MODE                   = #0BA0
+global constant GL_NORMALIZE                     = #0BA1
+global constant GL_VIEWPORT                      = #0BA2
+global constant GL_MODELVIEW_STACK_DEPTH         = #0BA3
+global constant GL_PROJECTION_STACK_DEPTH        = #0BA4
+global constant GL_TEXTURE_STACK_DEPTH           = #0BA5
+global constant GL_MODELVIEW_MATRIX              = #0BA6
+global constant GL_PROJECTION_MATRIX             = #0BA7
+global constant GL_TEXTURE_MATRIX                = #0BA8
+global constant GL_ATTRIB_STACK_DEPTH            = #0BB0
+global constant GL_CLIENT_ATTRIB_STACK_DEPTH     = #0BB1
+global constant GL_ALPHA_TEST                    = #0BC0
+global constant GL_ALPHA_TEST_FUNC               = #0BC1
+global constant GL_ALPHA_TEST_REF                = #0BC2
+global constant GL_DITHER                        = #0BD0
+global constant GL_BLEND_DST                     = #0BE0
+global constant GL_BLEND_SRC                     = #0BE1
+global constant GL_BLEND                         = #0BE2
+global constant GL_LOGIC_OP_MODE                 = #0BF0
+global constant GL_INDEX_LOGIC_OP                = #0BF1
+global constant GL_COLOR_LOGIC_OP                = #0BF2
+global constant GL_AUX_BUFFERS                   = #0C00
+global constant GL_DRAW_BUFFER                   = #0C01
+global constant GL_READ_BUFFER                   = #0C02
+global constant GL_SCISSOR_BOX                   = #0C10
+global constant GL_SCISSOR_TEST                  = #0C11
+global constant GL_INDEX_CLEAR_VALUE             = #0C20
+global constant GL_INDEX_WRITEMASK               = #0C21
+global constant GL_COLOR_CLEAR_VALUE             = #0C22
+global constant GL_COLOR_WRITEMASK               = #0C23
+global constant GL_INDEX_MODE                    = #0C30
+global constant GL_RGBA_MODE                     = #0C31
+global constant GL_DOUBLEBUFFER                  = #0C32
+global constant GL_STEREO                        = #0C33
+global constant GL_RENDER_MODE                   = #0C40
+global constant GL_PERSPECTIVE_CORRECTION_HINT   = #0C50
+global constant GL_POINT_SMOOTH_HINT             = #0C51
+global constant GL_LINE_SMOOTH_HINT              = #0C52
+global constant GL_POLYGON_SMOOTH_HINT           = #0C53
+global constant GL_FOG_HINT                      = #0C54
+global constant GL_TEXTURE_GEN_S                 = #0C60
+global constant GL_TEXTURE_GEN_T                 = #0C61
+global constant GL_TEXTURE_GEN_R                 = #0C62
+global constant GL_TEXTURE_GEN_Q                 = #0C63
+global constant GL_PIXEL_MAP_I_TO_I              = #0C70
+global constant GL_PIXEL_MAP_S_TO_S              = #0C71
+global constant GL_PIXEL_MAP_I_TO_R              = #0C72
+global constant GL_PIXEL_MAP_I_TO_G              = #0C73
+global constant GL_PIXEL_MAP_I_TO_B              = #0C74
+global constant GL_PIXEL_MAP_I_TO_A              = #0C75
+global constant GL_PIXEL_MAP_R_TO_R              = #0C76
+global constant GL_PIXEL_MAP_G_TO_G              = #0C77
+global constant GL_PIXEL_MAP_B_TO_B              = #0C78
+global constant GL_PIXEL_MAP_A_TO_A              = #0C79
+global constant GL_PIXEL_MAP_I_TO_I_SIZE         = #0CB0
+global constant GL_PIXEL_MAP_S_TO_S_SIZE         = #0CB1
+global constant GL_PIXEL_MAP_I_TO_R_SIZE         = #0CB2
+global constant GL_PIXEL_MAP_I_TO_G_SIZE         = #0CB3
+global constant GL_PIXEL_MAP_I_TO_B_SIZE         = #0CB4
+global constant GL_PIXEL_MAP_I_TO_A_SIZE         = #0CB5
+global constant GL_PIXEL_MAP_R_TO_R_SIZE         = #0CB6
+global constant GL_PIXEL_MAP_G_TO_G_SIZE         = #0CB7
+global constant GL_PIXEL_MAP_B_TO_B_SIZE         = #0CB8
+global constant GL_PIXEL_MAP_A_TO_A_SIZE         = #0CB9
+global constant GL_UNPACK_SWAP_BYTES             = #0CF0
+global constant GL_UNPACK_LSB_FIRST              = #0CF1
+global constant GL_UNPACK_ROW_LENGTH             = #0CF2
+global constant GL_UNPACK_SKIP_ROWS              = #0CF3
+global constant GL_UNPACK_SKIP_PIXELS            = #0CF4
+global constant GL_UNPACK_ALIGNMENT              = #0CF5
+global constant GL_PACK_SWAP_BYTES               = #0D00
+global constant GL_PACK_LSB_FIRST                = #0D01
+global constant GL_PACK_ROW_LENGTH               = #0D02
+global constant GL_PACK_SKIP_ROWS                = #0D03
+global constant GL_PACK_SKIP_PIXELS              = #0D04
+global constant GL_PACK_ALIGNMENT                = #0D05
+global constant GL_MAP_COLOR                     = #0D10
+global constant GL_MAP_STENCIL                   = #0D11
+global constant GL_INDEX_SHIFT                   = #0D12
+global constant GL_INDEX_OFFSET                  = #0D13
+global constant GL_RED_SCALE                     = #0D14
+global constant GL_RED_BIAS                      = #0D15
+global constant GL_ZOOM_X                        = #0D16
+global constant GL_ZOOM_Y                        = #0D17
+global constant GL_GREEN_SCALE                   = #0D18
+global constant GL_GREEN_BIAS                    = #0D19
+global constant GL_BLUE_SCALE                    = #0D1A
+global constant GL_BLUE_BIAS                     = #0D1B
+global constant GL_ALPHA_SCALE                   = #0D1C
+global constant GL_ALPHA_BIAS                    = #0D1D
+global constant GL_DEPTH_SCALE                   = #0D1E
+global constant GL_DEPTH_BIAS                    = #0D1F
+global constant GL_MAX_EVAL_ORDER                = #0D30
+global constant GL_MAX_LIGHTS                    = #0D31
+global constant GL_MAX_CLIP_PLANES               = #0D32
+global constant GL_MAX_TEXTURE_SIZE              = #0D33
+global constant GL_MAX_PIXEL_MAP_TABLE           = #0D34
+global constant GL_MAX_ATTRIB_STACK_DEPTH        = #0D35
+global constant GL_MAX_MODELVIEW_STACK_DEPTH     = #0D36
+global constant GL_MAX_NAME_STACK_DEPTH          = #0D37
+global constant GL_MAX_PROJECTION_STACK_DEPTH    = #0D38
+global constant GL_MAX_TEXTURE_STACK_DEPTH       = #0D39
+global constant GL_MAX_VIEWPORT_DIMS             = #0D3A
+global constant GL_MAX_CLIENT_ATTRIB_STACK_DEPTH = #0D3B
+global constant GL_SUBPIXEL_BITS                 = #0D50
+global constant GL_INDEX_BITS                    = #0D51
+global constant GL_RED_BITS                      = #0D52
+global constant GL_GREEN_BITS                    = #0D53
+global constant GL_BLUE_BITS                     = #0D54
+global constant GL_ALPHA_BITS                    = #0D55
+global constant GL_DEPTH_BITS                    = #0D56
+global constant GL_STENCIL_BITS                  = #0D57
+global constant GL_ACCUM_RED_BITS                = #0D58
+global constant GL_ACCUM_GREEN_BITS              = #0D59
+global constant GL_ACCUM_BLUE_BITS               = #0D5A
+global constant GL_ACCUM_ALPHA_BITS              = #0D5B
+global constant GL_NAME_STACK_DEPTH              = #0D70
+global constant GL_AUTO_NORMAL                   = #0D80
+global constant GL_MAP1_COLOR_4                  = #0D90
+global constant GL_MAP1_INDEX                    = #0D91
+global constant GL_MAP1_NORMAL                   = #0D92
+global constant GL_MAP1_TEXTURE_COORD_1          = #0D93
+global constant GL_MAP1_TEXTURE_COORD_2          = #0D94
+global constant GL_MAP1_TEXTURE_COORD_3          = #0D95
+global constant GL_MAP1_TEXTURE_COORD_4          = #0D96
+global constant GL_MAP1_VERTEX_3                 = #0D97
+global constant GL_MAP1_VERTEX_4                 = #0D98
+global constant GL_MAP2_COLOR_4                  = #0DB0
+global constant GL_MAP2_INDEX                    = #0DB1
+global constant GL_MAP2_NORMAL                   = #0DB2
+global constant GL_MAP2_TEXTURE_COORD_1          = #0DB3
+global constant GL_MAP2_TEXTURE_COORD_2          = #0DB4
+global constant GL_MAP2_TEXTURE_COORD_3          = #0DB5
+global constant GL_MAP2_TEXTURE_COORD_4          = #0DB6
+global constant GL_MAP2_VERTEX_3                 = #0DB7
+global constant GL_MAP2_VERTEX_4                 = #0DB8
+global constant GL_MAP1_GRID_DOMAIN              = #0DD0
+global constant GL_MAP1_GRID_SEGMENTS            = #0DD1
+global constant GL_MAP2_GRID_DOMAIN              = #0DD2
+global constant GL_MAP2_GRID_SEGMENTS            = #0DD3
+global constant GL_TEXTURE_1D                    = #0DE0
+global constant GL_TEXTURE_2D                    = #0DE1
+global constant GL_FEEDBACK_BUFFER_POINTER       = #0DF0
+global constant GL_FEEDBACK_BUFFER_SIZE          = #0DF1
+global constant GL_FEEDBACK_BUFFER_TYPE          = #0DF2
+global constant GL_SELECTION_BUFFER_POINTER      = #0DF3
+global constant GL_SELECTION_BUFFER_SIZE         = #0DF4
+
+-- GetTextureParameter --
+global constant GL_TEXTURE_WIDTH           = #1000
+global constant GL_TEXTURE_HEIGHT          = #1001
+global constant GL_TEXTURE_INTERNAL_FORMAT = #1003
+global constant GL_TEXTURE_BORDER_COLOR    = #1004
+global constant GL_TEXTURE_BORDER          = #1005
+
+-- HintMode --
+global constant GL_DONT_CARE = #1100
+global constant GL_FASTEST   = #1101
+global constant GL_NICEST    = #1102
+
+-- LightName --
+global constant GL_LIGHT0 = #4000
+global constant GL_LIGHT1 = #4001
+global constant GL_LIGHT2 = #4002
+global constant GL_LIGHT3 = #4003
+global constant GL_LIGHT4 = #4004
+global constant GL_LIGHT5 = #4005
+global constant GL_LIGHT6 = #4006
+global constant GL_LIGHT7 = #4007
+
+-- LightParameter --
+global constant GL_AMBIENT               = #1200
+global constant GL_DIFFUSE               = #1201
+global constant GL_SPECULAR              = #1202
+global constant GL_POSITION              = #1203
+global constant GL_SPOT_DIRECTION        = #1204
+global constant GL_SPOT_EXPONENT         = #1205
+global constant GL_SPOT_CUTOFF           = #1206
+global constant GL_CONSTANT_ATTENUATION  = #1207
+global constant GL_LINEAR_ATTENUATION    = #1208
+global constant GL_QUADRATIC_ATTENUATION = #1209
+
+-- ListMode --
+global constant GL_COMPILE             = #1300
+global constant GL_COMPILE_AND_EXECUTE = #1301
+
+-- LogicOp --
+global constant GL_CLEAR         = #1500
+global constant GL_AND           = #1501
+global constant GL_AND_REVERSE   = #1502
+global constant GL_COPY          = #1503
+global constant GL_AND_INVERTED  = #1504
+global constant GL_NOOP          = #1505
+global constant GL_XOR           = #1506
+global constant GL_OR            = #1507
+global constant GL_NOR           = #1508
+global constant GL_EQUIV         = #1509
+global constant GL_INVERT        = #150A
+global constant GL_OR_REVERSE    = #150B
+global constant GL_COPY_INVERTED = #150C
+global constant GL_OR_INVERTED   = #150D
+global constant GL_NAND          = #150E
+global constant GL_SET           = #150F
+
+-- MaterialParameter --
+global constant GL_EMISSION            = #1600
+global constant GL_SHININESS           = #1601
+global constant GL_AMBIENT_AND_DIFFUSE = #1602
+global constant GL_COLOR_INDEXES       = #1603
+
+-- MatrixMode --
+global constant GL_MODELVIEW  = #1700
+global constant GL_PROJECTION = #1701
+global constant GL_TEXTURE    = #1702
+
+-- PixelCopyType --
+global constant GL_COLOR   = #1800
+global constant GL_DEPTH   = #1801
+global constant GL_STENCIL = #1802
+
+-- PixelFormat --
+global constant GL_COLOR_INDEX     = #1900
+global constant GL_STENCIL_INDEX   = #1901
+global constant GL_DEPTH_COMPONENT = #1902
+global constant GL_RED             = #1903
+global constant GL_GREEN           = #1904
+global constant GL_BLUE            = #1905
+global constant GL_ALPHA           = #1906
+global constant GL_RGB             = #1907
+global constant GL_RGBA            = #1908
+global constant GL_LUMINANCE       = #1909
+global constant GL_LUMINANCE_ALPHA = #190A
+
+-- PixelType --
+global constant GL_BITMAP = #1A00
+
+-- PolygonMode --
+global constant GL_POINT = #1B00
+global constant GL_LINE  = #1B01
+global constant GL_FILL  = #1B02
+
+-- RenderingMode --
+global constant GL_RENDER   = #1C00
+global constant GL_FEEDBACK = #1C01
+global constant GL_SELECT   = #1C02
+
+-- ShadingModel --
+global constant GL_FLAT   = #1D00
+global constant GL_SMOOTH = #1D01
+
+-- StencilOp --
+global constant GL_KEEP    = #1E00
+global constant GL_REPLACE = #1E01
+global constant GL_INCR    = #1E02
+global constant GL_DECR    = #1E03
+
+-- StringName --
+global constant GL_VENDOR     = #1F00
+global constant GL_RENDERER   = #1F01
+global constant GL_VERSION    = #1F02
+global constant GL_EXTENSIONS = #1F03
+
+-- TextureCoordName --
+global constant GL_S = #2000
+global constant GL_T = #2001
+global constant GL_R = #2002
+global constant GL_Q = #2003
+
+-- TextureEnvMode --
+global constant GL_MODULATE = #2100
+global constant GL_DECAL    = #2101
+
+-- TextureEnvParameter --
+global constant GL_TEXTURE_ENV_MODE  = #2200
+global constant GL_TEXTURE_ENV_COLOR = #2201
+
+-- TextureEnvTarget --
+global constant GL_TEXTURE_ENV = #2300
+
+-- TextureGenMode --
+global constant GL_EYE_LINEAR    = #2400
+global constant GL_OBJECT_LINEAR = #2401
+global constant GL_SPHERE_MAP    = #2402
+
+-- TextureGenParameter --
+global constant GL_TEXTURE_GEN_MODE = #2500
+global constant GL_OBJECT_PLANE     = #2501
+global constant GL_EYE_PLANE        = #2502
+
+-- TextureMagFilter --
+global constant GL_NEAREST = #2600
+global constant GL_LINEAR  = #2601
+
+-- TextureMinFilter --
+global constant GL_NEAREST_MIPMAP_NEAREST = #2700
+global constant GL_LINEAR_MIPMAP_NEAREST  = #2701
+global constant GL_NEAREST_MIPMAP_LINEAR  = #2702
+global constant GL_LINEAR_MIPMAP_LINEAR   = #2703
+
+-- TextureParameterName --
+global constant GL_TEXTURE_MAG_FILTER = #2800
+global constant GL_TEXTURE_MIN_FILTER = #2801
+global constant GL_TEXTURE_WRAP_S     = #2802
+global constant GL_TEXTURE_WRAP_T     = #2803
+
+-- TextureWrapMode --
+global constant GL_CLAMP  = #2900
+global constant GL_REPEAT = #2901
+
+-- ClientAttribMask --
+global constant GL_CLIENT_PIXEL_STORE_BIT  = #00000001
+global constant GL_CLIENT_VERTEX_ARRAY_BIT = #00000002
+global constant GL_CLIENT_ALL_ATTRIB_BITS  = #FFFFFFFF
+
+-- polygon_offset --
+global constant GL_POLYGON_OFFSET_FACTOR = #8038
+global constant GL_POLYGON_OFFSET_UNITS  = #2A00
+global constant GL_POLYGON_OFFSET_POINT  = #2A01
+global constant GL_POLYGON_OFFSET_LINE   = #2A02
+global constant GL_POLYGON_OFFSET_FILL   = #8037
+
+-- texture --
+global constant GL_ALPHA4                 = #803B
+global constant GL_ALPHA8                 = #803C
+global constant GL_ALPHA12                = #803D
+global constant GL_ALPHA16                = #803E
+global constant GL_LUMINANCE4             = #803F
+global constant GL_LUMINANCE8             = #8040
+global constant GL_LUMINANCE12            = #8041
+global constant GL_LUMINANCE16            = #8042
+global constant GL_LUMINANCE4_ALPHA4      = #8043
+global constant GL_LUMINANCE6_ALPHA2      = #8044
+global constant GL_LUMINANCE8_ALPHA8      = #8045
+global constant GL_LUMINANCE12_ALPHA4     = #8046
+global constant GL_LUMINANCE12_ALPHA12    = #8047
+global constant GL_LUMINANCE16_ALPHA16    = #8048
+global constant GL_INTENSITY              = #8049
+global constant GL_INTENSITY4             = #804A
+global constant GL_INTENSITY8             = #804B
+global constant GL_INTENSITY12            = #804C
+global constant GL_INTENSITY16            = #804D
+global constant GL_R3_G3_B2               = #2A10
+global constant GL_RGB4                   = #804F
+global constant GL_RGB5                   = #8050
+global constant GL_RGB8                   = #8051
+global constant GL_RGB10                  = #8052
+global constant GL_RGB12                  = #8053
+global constant GL_RGB16                  = #8054
+global constant GL_RGBA2                  = #8055
+global constant GL_RGBA4                  = #8056
+global constant GL_RGB5_A1                = #8057
+global constant GL_RGBA8                  = #8058
+global constant GL_RGB10_A2               = #8059
+global constant GL_RGBA12                 = #805A
+global constant GL_RGBA16                 = #805B
+global constant GL_TEXTURE_RED_SIZE       = #805C
+global constant GL_TEXTURE_GREEN_SIZE     = #805D
+global constant GL_TEXTURE_BLUE_SIZE      = #805E
+global constant GL_TEXTURE_ALPHA_SIZE     = #805F
+global constant GL_TEXTURE_LUMINANCE_SIZE = #8060
+global constant GL_TEXTURE_INTENSITY_SIZE = #8061
+global constant GL_PROXY_TEXTURE_1D       = #8063
+global constant GL_PROXY_TEXTURE_2D       = #8064
+
+-- texture_object --
+global constant GL_TEXTURE_PRIORITY   = #8066
+global constant GL_TEXTURE_RESIDENT   = #8067
+global constant GL_TEXTURE_BINDING_1D = #8068
+global constant GL_TEXTURE_BINDING_2D = #8069
+
+-- vertex_array --
+global constant GL_VERTEX_ARRAY                = #8074
+global constant GL_NORMAL_ARRAY                = #8075
+global constant GL_COLOR_ARRAY                 = #8076
+global constant GL_INDEX_ARRAY                 = #8077
+global constant GL_TEXTURE_COORD_ARRAY         = #8078
+global constant GL_EDGE_FLAG_ARRAY             = #8079
+global constant GL_VERTEX_ARRAY_SIZE           = #807A
+global constant GL_VERTEX_ARRAY_TYPE           = #807B
+global constant GL_VERTEX_ARRAY_STRIDE         = #807C
+global constant GL_NORMAL_ARRAY_TYPE           = #807E
+global constant GL_NORMAL_ARRAY_STRIDE         = #807F
+global constant GL_COLOR_ARRAY_SIZE            = #8081
+global constant GL_COLOR_ARRAY_TYPE            = #8082
+global constant GL_COLOR_ARRAY_STRIDE          = #8083
+global constant GL_INDEX_ARRAY_TYPE            = #8085
+global constant GL_INDEX_ARRAY_STRIDE          = #8086
+global constant GL_TEXTURE_COORD_ARRAY_SIZE    = #8088
+global constant GL_TEXTURE_COORD_ARRAY_TYPE    = #8089
+global constant GL_TEXTURE_COORD_ARRAY_STRIDE  = #808A
+global constant GL_EDGE_FLAG_ARRAY_STRIDE      = #808C
+global constant GL_VERTEX_ARRAY_POINTER        = #808E
+global constant GL_NORMAL_ARRAY_POINTER        = #808F
+global constant GL_COLOR_ARRAY_POINTER         = #8090
+global constant GL_INDEX_ARRAY_POINTER         = #8091
+global constant GL_TEXTURE_COORD_ARRAY_POINTER = #8092
+global constant GL_EDGE_FLAG_ARRAY_POINTER     = #8093
+global constant GL_V2F                         = #2A20
+global constant GL_V3F                         = #2A21
+global constant GL_C4UB_V2F                    = #2A22
+global constant GL_C4UB_V3F                    = #2A23
+global constant GL_C3F_V3F                     = #2A24
+global constant GL_N3F_V3F                     = #2A25
+global constant GL_C4F_N3F_V3F                 = #2A26
+global constant GL_T2F_V3F                     = #2A27
+global constant GL_T4F_V4F                     = #2A28
+global constant GL_T2F_C4UB_V3F                = #2A29
+global constant GL_T2F_C3F_V3F                 = #2A2A
+global constant GL_T2F_N3F_V3F                 = #2A2B
+global constant GL_T2F_C4F_N3F_V3F             = #2A2C
+global constant GL_T4F_C4F_N3F_V4F             = #2A2D
+
+-- Extensions --
+global constant GL_EXT_vertex_array        = 1
+global constant GL_EXT_bgra                = 1
+global constant GL_EXT_paletted_texture    = 1
+global constant GL_WIN_draw_range_elements = 1
+
+-- EXT_vertex_array --
+global constant GL_VERTEX_ARRAY_EXT                = #8074
+global constant GL_NORMAL_ARRAY_EXT                = #8075
+global constant GL_COLOR_ARRAY_EXT                 = #8076
+global constant GL_INDEX_ARRAY_EXT                 = #8077
+global constant GL_TEXTURE_COORD_ARRAY_EXT         = #8078
+global constant GL_EDGE_FLAG_ARRAY_EXT             = #8079
+global constant GL_VERTEX_ARRAY_SIZE_EXT           = #807A
+global constant GL_VERTEX_ARRAY_TYPE_EXT           = #807B
+global constant GL_VERTEX_ARRAY_STRIDE_EXT         = #807C
+global constant GL_VERTEX_ARRAY_COUNT_EXT          = #807D
+global constant GL_NORMAL_ARRAY_TYPE_EXT           = #807E
+global constant GL_NORMAL_ARRAY_STRIDE_EXT         = #807F
+global constant GL_NORMAL_ARRAY_COUNT_EXT          = #8080
+global constant GL_COLOR_ARRAY_SIZE_EXT            = #8081
+global constant GL_COLOR_ARRAY_TYPE_EXT            = #8082
+global constant GL_COLOR_ARRAY_STRIDE_EXT          = #8083
+global constant GL_COLOR_ARRAY_COUNT_EXT           = #8084
+global constant GL_INDEX_ARRAY_TYPE_EXT            = #8085
+global constant GL_INDEX_ARRAY_STRIDE_EXT          = #8086
+global constant GL_INDEX_ARRAY_COUNT_EXT           = #8087
+global constant GL_TEXTURE_COORD_ARRAY_SIZE_EXT    = #8088
+global constant GL_TEXTURE_COORD_ARRAY_TYPE_EXT    = #8089
+global constant GL_TEXTURE_COORD_ARRAY_STRIDE_EXT  = #808A
+global constant GL_TEXTURE_COORD_ARRAY_COUNT_EXT   = #808B
+global constant GL_EDGE_FLAG_ARRAY_STRIDE_EXT      = #808C
+global constant GL_EDGE_FLAG_ARRAY_COUNT_EXT       = #808D
+global constant GL_VERTEX_ARRAY_POINTER_EXT        = #808E
+global constant GL_NORMAL_ARRAY_POINTER_EXT        = #808F
+global constant GL_COLOR_ARRAY_POINTER_EXT         = #8090
+global constant GL_INDEX_ARRAY_POINTER_EXT         = #8091
+global constant GL_TEXTURE_COORD_ARRAY_POINTER_EXT = #8092
+global constant GL_EDGE_FLAG_ARRAY_POINTER_EXT     = #8093
+global constant GL_DOUBLE_EXT                      = GL_DOUBLE
+
+-- EXT_bgra --
+global constant GL_BGR_EXT  = #80E0
+global constant GL_BGRA_EXT = #80E1
+
+-- These must match the GL_COLOR_TABLE_*_SGI enumerants --
+global constant GL_COLOR_TABLE_FORMAT_EXT         = #80D8
+global constant GL_COLOR_TABLE_WIDTH_EXT          = #80D9
+global constant GL_COLOR_TABLE_RED_SIZE_EXT       = #80DA
+global constant GL_COLOR_TABLE_GREEN_SIZE_EXT     = #80DB
+global constant GL_COLOR_TABLE_BLUE_SIZE_EXT      = #80DC
+global constant GL_COLOR_TABLE_ALPHA_SIZE_EXT     = #80DD
+global constant GL_COLOR_TABLE_LUMINANCE_SIZE_EXT = #80DE
+global constant GL_COLOR_TABLE_INTENSITY_SIZE_EXT = #80DF
+
+global constant GL_COLOR_INDEX1_EXT  = #80E2
+global constant GL_COLOR_INDEX2_EXT  = #80E3
+global constant GL_COLOR_INDEX4_EXT  = #80E4
+global constant GL_COLOR_INDEX8_EXT  = #80E5
+global constant GL_COLOR_INDEX12_EXT = #80E6
+global constant GL_COLOR_INDEX16_EXT = #80E7
+
+-- WIN_draw_range_elements --
+global constant GL_MAX_ELEMENTS_VERTICES_WIN = #80E8
+global constant GL_MAX_ELEMENTS_INDICES_WIN  = #80E9
+
+-- WIN_phong_shading --
+global constant GL_PHONG_WIN      = #80EA
+global constant GL_PHONG_HINT_WIN = #80EB
+
+-- WIN_specular_Fog --
+global constant GL_FOG_SPECULAR_TEXTURE_WIN = #80EC
+
+-- For compatibility with OpenGL v1.0 --
+global constant GL_LOGIC_OP           = GL_INDEX_LOGIC_OP
+global constant GL_TEXTURE_COMPONENTS = GL_TEXTURE_INTERNAL_FORMAT
+
+--GLU global constants--
+
+-- Version --
+global constant GLU_VERSION_1_1 = 1
+global constant GLU_VERSION_1_2 = 1
+
+-- Errors: (return value 0 = no error) --
+global constant GLU_INVALID_ENUM            = 100900
+global constant GLU_INVALID_VALUE           = 100901
+global constant GLU_OUT_OF_MEMORY           = 100902
+global constant GLU_INCOMPATIBLE_GL_VERSION = 100903
+
+-- StringName --
+global constant GLU_VERSION    = 100800
+global constant GLU_EXTENSIONS = 100801
+
+-- Boolean --
+global constant GLU_TRUE  = GL_TRUE
+global constant GLU_FALSE = GL_FALSE
+
+
+--***           Quadric global constants               ***--
+
+-- QuadricNormal --
+global constant GLU_SMOOTH = 100000
+global constant GLU_FLAT   = 100001
+global constant GLU_NONE   = 100002
+
+-- QuadricDrawStyle --
+global constant GLU_POINT      = 100010
+global constant GLU_LINE       = 100011
+global constant GLU_FILL       = 100012
+global constant GLU_SILHOUETTE = 100013
+
+-- QuadricOrientation --
+global constant GLU_OUTSIDE = 100020
+global constant GLU_INSIDE  = 100021
+
+--***           Tesselation global constants           ***--
+
+global constant GLU_TESS_MAX_COORD = 1.0e150
+
+-- TessProperty --
+global constant GLU_TESS_WINDING_RULE  = 100140
+global constant GLU_TESS_BOUNDARY_ONLY = 100141
+global constant GLU_TESS_TOLERANCE     = 100142
+
+-- TessWinding --
+global constant GLU_TESS_WINDING_ODD         = 100130
+global constant GLU_TESS_WINDING_NONZERO     = 100131
+global constant GLU_TESS_WINDING_POSITIVE    = 100132
+global constant GLU_TESS_WINDING_NEGATIVE    = 100133
+global constant GLU_TESS_WINDING_ABS_GEQ_TWO = 100134
+
+-- TessCallback --
+global constant GLU_TESS_BEGIN          = 100100
+global constant GLU_TESS_VERTEX         = 100101
+global constant GLU_TESS_END            = 100102
+global constant GLU_TESS_ERROR          = 100103
+global constant GLU_TESS_EDGE_FLAG      = 100104
+global constant GLU_TESS_COMBINE        = 100105
+global constant GLU_TESS_BEGIN_DATA     = 100106
+global constant GLU_TESS_VERTEX_DATA    = 100107
+global constant GLU_TESS_END_DATA       = 100108
+global constant GLU_TESS_ERROR_DATA     = 100109
+global constant GLU_TESS_EDGE_FLAG_DATA = 100110
+global constant GLU_TESS_COMBINE_DATA   = 100111
+
+-- TessError --
+global constant GLU_TESS_ERROR1 = 100151
+global constant GLU_TESS_ERROR2 = 100152
+global constant GLU_TESS_ERROR3 = 100153
+global constant GLU_TESS_ERROR4 = 100154
+global constant GLU_TESS_ERROR5 = 100155
+global constant GLU_TESS_ERROR6 = 100156
+global constant GLU_TESS_ERROR7 = 100157
+global constant GLU_TESS_ERROR8 = 100158
+
+global constant GLU_TESS_MISSING_BEGIN_POLYGON  = GLU_TESS_ERROR1
+global constant GLU_TESS_MISSING_BEGIN_CONTOUR  = GLU_TESS_ERROR2
+global constant GLU_TESS_MISSING_END_POLYGON    = GLU_TESS_ERROR3
+global constant GLU_TESS_MISSING_END_CONTOUR    = GLU_TESS_ERROR4
+global constant GLU_TESS_COORD_TOO_LARGE        = GLU_TESS_ERROR5
+global constant GLU_TESS_NEED_COMBINE_CALLBACK  = GLU_TESS_ERROR6
+
+--***           NURBS global constants                 ***--
+
+-- NurbsProperty --
+global constant GLU_AUTO_LOAD_MATRIX     = 100200
+global constant GLU_CULLING              = 100201
+global constant GLU_SAMPLING_TOLERANCE   = 100203
+global constant GLU_DISPLAY_MODE         = 100204
+global constant GLU_PARAMETRIC_TOLERANCE = 100202
+global constant GLU_SAMPLING_METHOD      = 100205
+global constant GLU_U_STEP               = 100206
+global constant GLU_V_STEP               = 100207
+
+-- NurbsSampling --
+global constant GLU_PATH_LENGTH      = 100215
+global constant GLU_PARAMETRIC_ERROR = 100216
+global constant GLU_DOMAIN_DISTANCE  = 100217
+
+
+-- NurbsTrim --
+global constant GLU_MAP1_TRIM_2 = 100210
+global constant GLU_MAP1_TRIM_3 = 100211
+
+-- NurbsDisplay --
+global constant GLU_OUTLINE_POLYGON = 100240
+global constant GLU_OUTLINE_PATCH   = 100241
+
+-- NurbsErrors --
+global constant GLU_NURBS_ERROR1  = 100251
+global constant GLU_NURBS_ERROR2  = 100252
+global constant GLU_NURBS_ERROR3  = 100253
+global constant GLU_NURBS_ERROR4  = 100254
+global constant GLU_NURBS_ERROR5  = 100255
+global constant GLU_NURBS_ERROR6  = 100256
+global constant GLU_NURBS_ERROR7  = 100257
+global constant GLU_NURBS_ERROR8  = 100258
+global constant GLU_NURBS_ERROR9  = 100259
+global constant GLU_NURBS_ERROR10 = 100260
+global constant GLU_NURBS_ERROR11 = 100261
+global constant GLU_NURBS_ERROR12 = 100262
+global constant GLU_NURBS_ERROR13 = 100263
+global constant GLU_NURBS_ERROR14 = 100264
+global constant GLU_NURBS_ERROR15 = 100265
+global constant GLU_NURBS_ERROR16 = 100266
+global constant GLU_NURBS_ERROR17 = 100267
+global constant GLU_NURBS_ERROR18 = 100268
+global constant GLU_NURBS_ERROR19 = 100269
+global constant GLU_NURBS_ERROR20 = 100270
+global constant GLU_NURBS_ERROR21 = 100271
+global constant GLU_NURBS_ERROR22 = 100272
+global constant GLU_NURBS_ERROR23 = 100273
+global constant GLU_NURBS_ERROR24 = 100274
+global constant GLU_NURBS_ERROR25 = 100275
+global constant GLU_NURBS_ERROR26 = 100276
+global constant GLU_NURBS_ERROR27 = 100277
+global constant GLU_NURBS_ERROR28 = 100278
+global constant GLU_NURBS_ERROR29 = 100279
+global constant GLU_NURBS_ERROR30 = 100280
+global constant GLU_NURBS_ERROR31 = 100281
+global constant GLU_NURBS_ERROR32 = 100282
+global constant GLU_NURBS_ERROR33 = 100283
+global constant GLU_NURBS_ERROR34 = 100284
+global constant GLU_NURBS_ERROR35 = 100285
+global constant GLU_NURBS_ERROR36 = 100286
+global constant GLU_NURBS_ERROR37 = 100287
+
+-- Contours types -- obsolete! --
+global constant GLU_CW       = 100120
+global constant GLU_CCW      = 100121
+global constant GLU_INTERIOR = 100122
+global constant GLU_EXTERIOR = 100123
+global constant GLU_UNKNOWN  = 100124
+
+-- Names without "TESS_" prefix --
+global constant GLU_BEGIN     = GLU_TESS_BEGIN
+global constant GLU_VERTEX    = GLU_TESS_VERTEX
+global constant GLU_END       = GLU_TESS_END
+global constant GLU_ERROR     = GLU_TESS_ERROR
+global constant GLU_EDGE_FLAG = GLU_TESS_EDGE_FLAG
+
+--GLAUX global constants--
+
+global constant AUX_RGB           = 0
+global constant AUX_RGBA          = AUX_RGB
+global constant AUX_INDEX         = 1
+global constant AUX_SINGLE        = 0
+global constant AUX_DOUBLE        = 2
+global constant AUX_DIRECT        = 0
+global constant AUX_INDIRECT      = 4
+
+global constant AUX_ACCUM         = 8
+global constant AUX_ALPHA         = 16
+global constant AUX_DEPTH24       = 32      -- 24-bit depth buffer --
+global constant AUX_STENCIL       = 64
+global constant AUX_AUX           = 128
+global constant AUX_DEPTH16       = 256     -- 16-bit depth buffer --
+global constant AUX_FIXED_332_PAL = 512
+global constant AUX_DEPTH         = AUX_DEPTH16 -- default is 16-bit depth buffer --
+
+--
+-- ToolKit Event Types
+--
+global constant AUX_EXPOSE    = 1
+global constant AUX_CONFIG    = 2
+global constant AUX_DRAW      = 4
+global constant AUX_KEYEVENT  = 8
+global constant AUX_MOUSEDOWN = 16
+global constant AUX_MOUSEUP   = 32
+global constant AUX_MOUSELOC  = 64
+
+--
+-- Toolkit Event Data Indices
+--
+global constant AUX_WINDOWX     = 0
+global constant AUX_WINDOWY     = 1
+global constant AUX_MOUSEX      = 0
+global constant AUX_MOUSEY      = 1
+global constant AUX_MOUSESTATUS = 3
+global constant AUX_KEY         = 0
+global constant AUX_KEYSTATUS   = 1
+
+--
+-- ToolKit Event Status Messages
+--
+global constant AUX_LEFTBUTTON   = 1
+global constant AUX_RIGHTBUTTON  = 2
+global constant AUX_MIDDLEBUTTON = 4
+global constant AUX_SHIFT        = 1
+global constant AUX_CONTROL      = 2
+
+--
+-- ToolKit Key Codes
+--
+global constant AUX_RETURN  = #0D
+global constant AUX_ESCAPE  = #1B
+global constant AUX_SPACE   = #20
+global constant AUX_LEFT    = #25
+global constant AUX_UP      = #26
+global constant AUX_RIGHT   = #27
+global constant AUX_DOWN    = #28
+global constant AUX_A       = 'A'
+global constant AUX_B       = 'B'
+global constant AUX_C       = 'C'
+global constant AUX_D       = 'D'
+global constant AUX_E       = 'E'
+global constant AUX_F       = 'F'
+global constant AUX_G       = 'G'
+global constant AUX_H       = 'H'
+global constant AUX_I       = 'I'
+global constant AUX_J       = 'J'
+global constant AUX_K       = 'K'
+global constant AUX_L       = 'L'
+global constant AUX_M       = 'M'
+global constant AUX_N       = 'N'
+global constant AUX_O       = 'O'
+global constant AUX_P       = 'P'
+global constant AUX_Q       = 'Q'
+global constant AUX_R       = 'R'
+global constant AUX_S       = 'S'
+global constant AUX_T       = 'T'
+global constant AUX_U       = 'U'
+global constant AUX_V       = 'V'
+global constant AUX_W       = 'W'
+global constant AUX_X       = 'X'
+global constant AUX_Y       = 'Y'
+global constant AUX_Z       = 'Z'
+global constant AUX_a       = 'a'
+global constant AUX_b       = 'b'
+global constant AUX_c       = 'c'
+global constant AUX_d       = 'd'
+global constant AUX_e       = 'e'
+global constant AUX_f       = 'f'
+global constant AUX_g       = 'g'
+global constant AUX_h       = 'h'
+global constant AUX_i       = 'i'
+global constant AUX_j       = 'j'
+global constant AUX_k       = 'k'
+global constant AUX_l       = 'l'
+global constant AUX_m       = 'm'
+global constant AUX_n       = 'n'
+global constant AUX_o       = 'o'
+global constant AUX_p       = 'p'
+global constant AUX_q       = 'q'
+global constant AUX_r       = 'r'
+global constant AUX_s       = 's'
+global constant AUX_t       = 't'
+global constant AUX_u       = 'u'
+global constant AUX_v       = 'v'
+global constant AUX_w       = 'w'
+global constant AUX_x       = 'x'
+global constant AUX_y       = 'y'
+global constant AUX_z       = 'z'
+global constant AUX_0       = '0'
+global constant AUX_1       = '1'
+global constant AUX_2       = '2'
+global constant AUX_3       = '3'
+global constant AUX_4       = '4'
+global constant AUX_5       = '5'
+global constant AUX_6       = '6'
+global constant AUX_7       = '7'
+global constant AUX_8       = '8'
+global constant AUX_9       = '9'
+
+--
+-- ToolKit Gets and Sets
+--
+global constant AUX_FD           = 1  -- return fd (long) --
+global constant AUX_COLORMAP     = 3  -- pass buf of r, g and b (unsigned char) --
+global constant AUX_GREYSCALEMAP = 4
+global constant AUX_FOGMAP       = 5  -- pass fog and color bits (long) --
+global constant AUX_ONECOLOR     = 6  -- pass index, r, g, and b (long) --
+
+--
+-- Color Macros
+--
+
+global constant AUX_BLACK   = 0
+global constant AUX_RED     = 13
+global constant AUX_GREEN   = 14
+global constant AUX_YELLOW  = 15
+global constant AUX_BLUE    = 16
+global constant AUX_MAGENTA = 17
+global constant AUX_CYAN    = 18
+global constant AUX_WHITE   = 19

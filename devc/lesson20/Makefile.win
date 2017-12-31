@@ -1,0 +1,25 @@
+# Project: Lesson20
+# Makefile created by Dev-C++ 4.9.6.4
+
+CC   = g++.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = lesson20.o $(RES)
+LIBS =  -L"C:/DEV-CPP/lib" -lopengl32 -lglu32 -lglaux -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32
+INCS =  -I"C:/DEV-CPP/include"  -I"C:/DEV-CPP/include/g++-3"  -I"C:/DEV-CPP/include" 
+BIN  = Lesson20.exe
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS -g3 -mwindows
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson20.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(OBJ) -o "Lesson20.exe" $(LIBS) $(CFLAGS)
+
+lesson20.o: lesson20.cpp
+	$(CC) -c lesson20.cpp -o lesson20.o $(CFLAGS)

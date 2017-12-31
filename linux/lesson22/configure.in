@@ -1,0 +1,46 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(lesson22.cpp)
+
+AM_INIT_AUTOMAKE(lesson22, 1.0)
+SDL_VERSION=1.1.6
+
+INCLUDE="-I/usr/local/include/GL -I/usr/local/include -I/usr/X11R6/include/GL -I/usr/X11R6/include"
+
+OPT="-O6 -mpentiumpro -ffast-math"
+#OPT="-g"
+
+dnl Checks for programs.
+
+AM_PATH_SDL($SDL_VERSION,
+            :,
+	    AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
+)
+
+SDL_FLAGS=`sdl-config --cflags`
+LIBS="$LIBS `sdl-config --libs`"
+
+CFLAGS="$SDL_FLAGS $INCLUDE $OPT"
+
+CPPFLAGS=$CFLAGS
+CXXFLAGS=$CFLAGS
+
+AC_PROG_CPP
+AC_PROG_CXX
+
+dnl Checks for libraries.
+dnl Replace `main' with a function in -lGL:
+AC_CHECK_LIB(GL, main, LIBS="$LIBS -lGL", AC_MSG_ERROR([libGL not found]))
+dnl Replace `main' with a function in -lGLU:
+AC_CHECK_LIB(GLU, main, LIBS="$LIBS -lGLU", AC_MSG_ERROR([libGLU not found]))
+
+dnl Checks for header files.
+AC_HEADER_STDC
+
+AC_CHECK_HEADERS(gl.h glu.h, , AC_MSG_ERROR([OpenGL headers not found]))
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+
+dnl Checks for library functions.
+
+AC_OUTPUT(Makefile)

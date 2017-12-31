@@ -1,0 +1,176 @@
+--
+-- Copyright 1992-1999 Silicon Graphics, Inc.
+-- All Rights Reserved.
+--
+-- This is UNPUBLISHED PROPRIETARY SOURCE CODE of Silicon Graphics, Inc.;
+-- the contents of this file may not be disclosed to third parties, copied or
+-- duplicated in any form, in whole or in part, without the prior written
+-- permission of Silicon Graphics, Inc.
+--
+-- RESTRICTED RIGHTS LEGEND:
+-- Use, duplication or disclosure by the Government is subject to restrictions
+-- as set forth in subdivision (c)(1)(ii) of the Rights in Technical Data
+-- and Computer Software clause at DFARS 252.227-7013, and/or in similar or
+-- successor clauses in the FAR, DOD or NASA FAR Supplement. Unpublished -
+-- rights reserved under the Copyright Laws of the United States.
+--
+
+
+global constant GL_ARB_multitexture                 = 1
+global constant GL_EXT_abgr                         = 1
+global constant GL_EXT_bgra                         = 1
+global constant GL_EXT_clip_volume_hint             = 1
+global constant GL_EXT_compiled_vertex_array        = 1
+global constant GL_EXT_cull_vertex                  = 1
+global constant GL_EXT_packed_pixels                = 1
+global constant GL_EXT_point_parameters             = 1
+global constant GL_EXT_stencil_wrap                 = 1
+global constant GL_EXT_texture_env_add              = 1
+global constant GL_EXT_texture_env_combine          = 1
+global constant GL_EXT_vertex_array                 = 1
+global constant GL_NV_texgen_reflection             = 1
+global constant GL_NV_texture_env_combine4          = 1
+global constant GL_WIN_swap_hint                    = 1
+
+-- EXT_abgr --
+global constant GL_ABGR_EXT                         = #8000
+
+-- EXT_packed_pixels --
+global constant GL_UNSIGNED_BYTE_3_3_2_EXT          = #8032
+global constant GL_UNSIGNED_SHORT_4_4_4_4_EXT       = #8033
+global constant GL_UNSIGNED_SHORT_5_5_5_1_EXT       = #8034
+global constant GL_UNSIGNED_INT_8_8_8_8_EXT         = #8035
+global constant GL_UNSIGNED_INT_10_10_10_2_EXT      = #8036
+
+-- EXT_vertex_array --
+global constant GL_VERTEX_ARRAY_EXT                 = #8074
+global constant GL_NORMAL_ARRAY_EXT                 = #8075
+global constant GL_COLOR_ARRAY_EXT                  = #8076
+global constant GL_INDEX_ARRAY_EXT                  = #8077
+global constant GL_TEXTURE_COORD_ARRAY_EXT          = #8078
+global constant GL_EDGE_FLAG_ARRAY_EXT              = #8079
+global constant GL_VERTEX_ARRAY_SIZE_EXT            = #807A
+global constant GL_VERTEX_ARRAY_TYPE_EXT            = #807B
+global constant GL_VERTEX_ARRAY_STRIDE_EXT          = #807C
+global constant GL_VERTEX_ARRAY_COUNT_EXT           = #807D
+global constant GL_NORMAL_ARRAY_TYPE_EXT            = #807E
+global constant GL_NORMAL_ARRAY_STRIDE_EXT          = #807F
+global constant GL_NORMAL_ARRAY_COUNT_EXT           = #8080
+global constant GL_COLOR_ARRAY_SIZE_EXT             = #8081
+global constant GL_COLOR_ARRAY_TYPE_EXT             = #8082
+global constant GL_COLOR_ARRAY_STRIDE_EXT           = #8083
+global constant GL_COLOR_ARRAY_COUNT_EXT            = #8084
+global constant GL_INDEX_ARRAY_TYPE_EXT             = #8085
+global constant GL_INDEX_ARRAY_STRIDE_EXT           = #8086
+global constant GL_INDEX_ARRAY_COUNT_EXT            = #8087
+global constant GL_TEXTURE_COORD_ARRAY_SIZE_EXT     = #8088
+global constant GL_TEXTURE_COORD_ARRAY_TYPE_EXT     = #8089
+global constant GL_TEXTURE_COORD_ARRAY_STRIDE_EXT   = #808A
+global constant GL_TEXTURE_COORD_ARRAY_COUNT_EXT    = #808B
+global constant GL_EDGE_FLAG_ARRAY_STRIDE_EXT       = #808C
+global constant GL_EDGE_FLAG_ARRAY_COUNT_EXT        = #808D
+global constant GL_VERTEX_ARRAY_POINTER_EXT         = #808E
+global constant GL_NORMAL_ARRAY_POINTER_EXT         = #808F
+global constant GL_COLOR_ARRAY_POINTER_EXT          = #8090
+global constant GL_INDEX_ARRAY_POINTER_EXT          = #8091
+global constant GL_TEXTURE_COORD_ARRAY_POINTER_EXT  = #8092
+global constant GL_EDGE_FLAG_ARRAY_POINTER_EXT      = #8093
+
+-- EXT_bgra --
+global constant GL_BGR_EXT                          = #80E0
+global constant GL_BGRA_EXT                         = #80E1
+
+-- EXT_clip_volume_hint --
+global constant GL_CLIP_VOLUME_CLIPPING_HINT_EXT    = #80F0
+
+-- EXT_point_parameters --
+global constant GL_POINT_SIZE_MIN_EXT               = #8126
+global constant GL_POINT_SIZE_MAX_EXT               = #8127
+global constant GL_POINT_FADE_THRESHOLD_SIZE_EXT    = #8128
+global constant GL_DISTANCE_ATTENUATION_EXT         = #8129
+
+-- EXT_compiled_vertex_array --
+global constant GL_ARRAY_ELEMENT_LOCK_FIRST_EXT     = #81A8
+global constant GL_ARRAY_ELEMENT_LOCK_COUNT_EXT     = #81A9
+
+-- EXT_cull_vertex --
+global constant GL_CULL_VERTEX_EXT                  = #81AA
+global constant GL_CULL_VERTEX_EYE_POSITION_EXT     = #81AB
+global constant GL_CULL_VERTEX_OBJECT_POSITION_EXT  = #81AC
+
+-- ARB_multitexture --
+global constant GL_ACTIVE_TEXTURE_ARB               = #84E0
+global constant GL_CLIENT_ACTIVE_TEXTURE_ARB        = #84E1
+global constant GL_MAX_TEXTURE_UNITS_ARB            = #84E2
+global constant GL_TEXTURE0_ARB                     = #84C0
+global constant GL_TEXTURE1_ARB                     = #84C1
+global constant GL_TEXTURE2_ARB                     = #84C2
+global constant GL_TEXTURE3_ARB                     = #84C3
+global constant GL_TEXTURE4_ARB                     = #84C4
+global constant GL_TEXTURE5_ARB                     = #84C5
+global constant GL_TEXTURE6_ARB                     = #84C6
+global constant GL_TEXTURE7_ARB                     = #84C7
+global constant GL_TEXTURE8_ARB                     = #84C8
+global constant GL_TEXTURE9_ARB                     = #84C9
+global constant GL_TEXTURE10_ARB                    = #84CA
+global constant GL_TEXTURE11_ARB                    = #84CB
+global constant GL_TEXTURE12_ARB                    = #84CC
+global constant GL_TEXTURE13_ARB                    = #84CD
+global constant GL_TEXTURE14_ARB                    = #84CE
+global constant GL_TEXTURE15_ARB                    = #84CF
+global constant GL_TEXTURE16_ARB                    = #84D0
+global constant GL_TEXTURE17_ARB                    = #84D1
+global constant GL_TEXTURE18_ARB                    = #84D2
+global constant GL_TEXTURE19_ARB                    = #84D3
+global constant GL_TEXTURE20_ARB                    = #84D4
+global constant GL_TEXTURE21_ARB                    = #84D5
+global constant GL_TEXTURE22_ARB                    = #84D6
+global constant GL_TEXTURE23_ARB                    = #84D7
+global constant GL_TEXTURE24_ARB                    = #84D8
+global constant GL_TEXTURE25_ARB                    = #84D9
+global constant GL_TEXTURE26_ARB                    = #84DA
+global constant GL_TEXTURE27_ARB                    = #84DB
+global constant GL_TEXTURE28_ARB                    = #84DC
+global constant GL_TEXTURE29_ARB                    = #84DD
+global constant GL_TEXTURE30_ARB                    = #84DE
+global constant GL_TEXTURE31_ARB                    = #84DF
+
+-- EXT_stencil_wrap --
+global constant GL_INCR_WRAP_EXT                    = #8507
+global constant GL_DECR_WRAP_EXT                    = #8508
+
+-- NV_texgen_reflection --
+global constant GL_NORMAL_MAP_NV                    = #8511
+global constant GL_REFLECTION_MAP_NV                = #8512
+
+-- EXT_texture_env_combine --
+global constant GL_COMBINE_EXT                      = #8570
+global constant GL_COMBINE_RGB_EXT                  = #8571
+global constant GL_COMBINE_ALPHA_EXT                = #8572
+global constant GL_RGB_SCALE_EXT                    = #8573
+global constant GL_ADD_SIGNED_EXT                   = #8574
+global constant GL_INTERPOLATE_EXT                  = #8575
+global constant GL_global_constant_EXT              = #8576
+global constant GL_PRIMARY_COLOR_EXT                = #8577
+global constant GL_PREVIOUS_EXT                     = #8578
+global constant GL_SOURCE0_RGB_EXT                  = #8580
+global constant GL_SOURCE1_RGB_EXT                  = #8581
+global constant GL_SOURCE2_RGB_EXT                  = #8582
+global constant GL_SOURCE0_ALPHA_EXT                = #8588
+global constant GL_SOURCE1_ALPHA_EXT                = #8589
+global constant GL_SOURCE2_ALPHA_EXT                = #858A
+global constant GL_OPERAND0_RGB_EXT                 = #8590
+global constant GL_OPERAND1_RGB_EXT                 = #8591
+global constant GL_OPERAND2_RGB_EXT                 = #8592
+global constant GL_OPERAND0_ALPHA_EXT               = #8598
+global constant GL_OPERAND1_ALPHA_EXT               = #8599
+global constant GL_OPERAND2_ALPHA_EXT               = #859A
+
+-- NV_texture_env_combine4 --
+global constant GL_COMBINE4_NV                      = #8503
+global constant GL_SOURCE3_RGB_NV                   = #8583
+global constant GL_SOURCE3_ALPHA_NV                 = #858B
+global constant GL_OPERAND3_RGB_NV                  = #8593
+global constant GL_OPERAND3_ALPHA_NV                = #859B
+
+--------------------------------------------------------------/

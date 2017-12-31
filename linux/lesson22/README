@@ -1,0 +1,17 @@
+this is linux port of nehe's lesson22
+this port is done in 1 day, if you like
+this port or if you correct a bug,
+mail me at lucriz@inwind.it
+
+to build lesson22 you need SDL-1.1.6 or better,
+and, of course, an opengl implementation for linux
+like mesa (www.mesa3d.org).
+
+for building the binary executable
+run:
+
+./configure
+
+at the end of configure script run make.
+
+happy lesson22

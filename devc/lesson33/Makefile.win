@@ -1,0 +1,28 @@
+# Project: Lesson33
+# Makefile created by Dev-C++ 4.9.6.4
+
+CC   = g++.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = Lesson33.o TGALoader.o $(RES)
+LIBS =  -L"C:/DEV-CPP/lib" -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32 -lglu32 -lopengl32
+INCS =  -I"C:/DEV-CPP/include"  -I"C:/DEV-CPP/include/g++-3"  -I"C:/DEV-CPP/include" 
+BIN  = Lesson33.exe
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_MBCS -g3 -mwindows
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before Lesson33.exe all-after
+
+
+clean: clean-custom
+	rm -f $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(OBJ) -o "Lesson33.exe" $(LIBS) $(CFLAGS)
+
+Lesson33.o: Lesson33.cpp
+	$(CC) -c Lesson33.cpp -o Lesson33.o $(CFLAGS)
+
+TGALoader.o: TGALoader.cpp
+	$(CC) -c TGALoader.cpp -o TGALoader.o $(CFLAGS)

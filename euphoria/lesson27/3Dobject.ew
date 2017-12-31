@@ -1,0 +1,263 @@
+with trace
+
+-- load object
+global function ReadObject(sequence st, sequence obj)
+atom file
+sequence ret
+
+  file = open(st, "r")
+  if file = -1  then
+    return FALSE
+  end if
+
+  --points
+  ret = get(file)
+  obj[2] = ret[2]
+  for i=1 to obj[2] do
+    ret = get(file)
+    obj[3][i][1] = ret[2]
+    ret = get(file)
+    obj[3][i][2] = ret[2]
+    ret = get(file)
+    obj[3][i][3] = ret[2]
+  end for
+
+  --planes
+  ret = get(file)
+  obj[1] = ret[2]
+  for i = 1 to obj[1] do
+    ret = get(file)
+    obj[4][i][1][1] = ret[2]
+    ret = get(file)
+    obj[4][i][1][2] = ret[2]
+    ret = get(file)
+    obj[4][i][1][3] = ret[2]
+
+    ret = get(file)
+    obj[4][i][2][1][1] = ret[2]
+    ret = get(file)
+    obj[4][i][2][1][2] = ret[2]
+    ret = get(file)
+    obj[4][i][2][1][3] = ret[2]
+    ret = get(file)
+    obj[4][i][2][2][1] = ret[2]
+    ret = get(file)
+    obj[4][i][2][2][2] = ret[2]
+    ret = get(file)
+    obj[4][i][2][2][3] = ret[2]
+    ret = get(file)
+    obj[4][i][2][3][1] = ret[2]
+    ret = get(file)
+    obj[4][i][2][3][2] = ret[2]
+    ret = get(file)
+    obj[4][i][2][3][3] = ret[2]
+  end for
+  return {TRUE,obj}
+end function
+
+function abs(atom x)
+    if x < 0 then
+        x *= -1
+    end if
+    return x
+end function
+
+-- connectivity procedure - based on Gamasutra's article
+-- hard to explain here
+global function SetConnectivity(sequence obj)
+atom p1i, p2i, p1j, p2j
+atom P1i, P2i, P1j, P2j
+
+    for i = 1 to obj[1]-1 do
+        for j = 1 to obj[1] do
+            for ki = 1 to 3 do
+                if not obj[4][i][3][ki] then
+                    for kj = 1 to 3 do
+                        p1i=ki
+                        p1j=kj
+                        p2i=remainder(ki,3)+1
+                        p2j=remainder(kj,3)+1
+
+                        p1i=obj[4][i][1][p1i]
+                        p2i=obj[4][i][1][p2i]
+                        p1j=obj[4][j][1][p1j]
+                        p2j=obj[4][j][1][p2j]
+
+                        P1i=((p1i+p2i)-abs(p1i-p2i))/2
+                        P2i=((p1i+p2i)+abs(p1i-p2i))/2
+                        P1j=((p1j+p2j)-abs(p1j-p2j))/2
+                        P2j=((p1j+p2j)+abs(p1j-p2j))/2
+
+                        if ((P1i=P1j) and  (P2i=P2j)) then  --they are neighbours
+                            obj[4][i][3][ki] = j
+                            obj[4][i][3][kj] = i
+                        end if
+                    end for
+                end if
+            end for
+        end for
+    end for
+
+    return obj
+end function
+
+-- function for computing a plane equation given 3 points
+global function CalcPlane(sequence obj, sequence plane, integer loop)
+sequence v
+
+    v = repeat({0.0,0.0,0.0},4)
+    for i = 1 to 3 do
+        v[i+1][1] = obj[3][plane[1][i]][1]
+        v[i+1][2] = obj[3][plane[1][i]][2]
+        v[i+1][3] = obj[3][plane[1][i]][3]
+    end for
+
+    obj[4][loop][4][1] = v[2][2]*(v[3][3]-v[4][3]) + v[3][2]*(v[4][3]-v[2][3]) + v[4][2]*(v[2][3]-v[3][3])
+    obj[4][loop][4][2] = v[2][3]*(v[3][1]-v[4][1]) + v[3][3]*(v[4][1]-v[2][1]) + v[4][3]*(v[2][1]-v[3][1])
+    obj[4][loop][4][3] = v[2][1]*(v[3][2]-v[4][2]) + v[3][1]*(v[4][2]-v[2][2]) + v[4][1]*(v[2][2]-v[3][2])
+    obj[4][loop][4][4] =-( v[2][1]*(v[3][2]*v[4][3] - v[4][2]*v[3][3]) +
+                      v[3][1]*(v[4][2]*v[2][3] - v[2][2]*v[4][3]) +
+                      v[4][1]*(v[2][2]*v[3][3] - v[3][2]*v[2][3]) )
+    return obj
+end function
+
+-- procedure for drawing the object - very simple
+global procedure DrawGLObject(sequence obj)
+
+    c_proc(glBegin,{GL_TRIANGLES})
+    for i = 1 to obj[1] do
+        for j = 1 to 3 do
+            c_proc(glNormal3f,{obj[4][i][2][j][1],obj[4][i][2][j][2],obj[4][i][2][j][3]})
+            c_proc(glVertex3f,{obj[3][obj[4][i][1][j]][1],obj[3][obj[4][i][1][j]][2],obj[3][obj[4][i][1][j]][3]})
+        end for
+    end for
+    c_proc(glEnd,{})
+end procedure
+
+global function  CastShadow(sequence obj, atom lp)
+integer p1, p2, jj, k
+sequence v1, v2
+atom side
+
+    v1 = {0.0,0.0,0.0}
+    v2 = {0.0,0.0,0.0}
+    --set visual parameter
+    for i = 1 to obj[1] do
+        -- check to see if light is in front or behind the plane (face plane)
+        side =  obj[4][i][4][1]*float32_to_atom(peek({lp,4})) +
+                   obj[4][i][4][2]*float32_to_atom(peek({lp+4,4})) +
+                   obj[4][i][4][3]*float32_to_atom(peek({lp+8,4})) +
+                   obj[4][i][4][4]*float32_to_atom(peek({lp+12,4}))
+        if side > 0 then
+            obj[4][i][5] = TRUE
+        else
+            obj[4][i][5] = FALSE
+        end if
+    end for
+
+    c_proc(glDisable,{GL_LIGHTING})
+    c_proc(glDepthMask,{GL_FALSE})
+    c_proc(glDepthFunc,{GL_LEQUAL})
+
+    c_proc(glEnable,{GL_STENCIL_TEST})
+    c_proc(glColorMask,{0, 0, 0, 0})
+    c_proc(glStencilFunc,{GL_ALWAYS, 1, #FFFFFFFF})
+
+    -- first pass, stencil operation decreases stencil value
+    c_proc(glFrontFace,{GL_CCW})
+    c_proc(glStencilOp,{GL_KEEP, GL_KEEP, GL_INCR})
+    for i = 1 to obj[1] do
+        if obj[4][i][5] then
+            for j = 1 to 3 do
+
+                k = obj[4][i][3][j]
+                if not k or not obj[4][k][5] then
+                    -- here we have an edge, we must draw a polygon
+                    p1 = obj[4][i][1][j]
+                    jj = remainder(j,3)+1
+                    p2 = obj[4][i][1][jj]
+                    --calculate the length of the vector
+                    v1[1] = (obj[3][p1][1] - float32_to_atom(peek({lp,4})))*100
+                    v1[2] = (obj[3][p1][2] - float32_to_atom(peek({lp+4,4})))*100
+                    v1[3] = (obj[3][p1][3] - float32_to_atom(peek({lp+8,4})))*100
+
+                    v2[1] = (obj[3][p2][1] - float32_to_atom(peek({lp,4})))*100
+                    v2[2] = (obj[3][p2][2] - float32_to_atom(peek({lp+4,4})))*100
+                    v2[3] = (obj[3][p2][3] - float32_to_atom(peek({lp+8,4})))*100
+
+                    --draw the polygon
+                    c_proc(glBegin,{GL_TRIANGLE_STRIP})
+                        c_proc(glVertex3f,{obj[3][p1][1],obj[3][p1][2],obj[3][p1][3]})
+                        c_proc(glVertex3f,{obj[3][p1][1] + v1[1],obj[3][p1][2] + v1[2],obj[3][p1][3] + v1[3]})
+
+                        c_proc(glVertex3f,{obj[3][p2][1],obj[3][p2][2],obj[3][p2][3]})
+                        c_proc(glVertex3f,{obj[3][p2][1] + v2[1],obj[3][p2][2] + v2[2],obj[3][p2][3] + v2[3]})
+                    c_proc(glEnd,{})
+                end if
+            end for
+        end if
+    end for
+
+    -- second pass, stencil operation increases stencil value
+    c_proc(glFrontFace,{GL_CW})
+    c_proc(glStencilOp,{GL_KEEP, GL_KEEP, GL_DECR})
+    for i = 1 to obj[1] do
+        if obj[4][i][5] then
+            for j = 1 to 3 do
+
+                k = obj[4][i][3][j]
+                if not k or not obj[4][k][5] then
+                    -- here we have an edge, we must draw a polygon
+                    p1 = obj[4][i][1][j]
+                    jj = remainder(j,3)+1
+                    p2 = obj[4][i][1][jj]
+                    --calculate the length of the vector
+                    v1[1] = (obj[3][p1][1] - float32_to_atom(peek({lp,4})))*100
+                    v1[2] = (obj[3][p1][2] - float32_to_atom(peek({lp+4,4})))*100
+                    v1[3] = (obj[3][p1][3] - float32_to_atom(peek({lp+8,4})))*100
+
+                    v2[1] = (obj[3][p2][1] - float32_to_atom(peek({lp,4})))*100
+                    v2[2] = (obj[3][p2][2] - float32_to_atom(peek({lp+4,4})))*100
+                    v2[3] = (obj[3][p2][3] - float32_to_atom(peek({lp+8,4})))*100
+
+                    --draw the polygon
+                    c_proc(glBegin,{GL_TRIANGLE_STRIP})
+                        c_proc(glVertex3f,{obj[3][p1][1],obj[3][p1][2],obj[3][p1][3]})
+                        c_proc(glVertex3f,{obj[3][p1][1] + v1[1],obj[3][p1][2] + v1[2],obj[3][p1][3] + v1[3]})
+
+                        c_proc(glVertex3f,{obj[3][p2][1],obj[3][p2][2],obj[3][p2][3]})
+                        c_proc(glVertex3f,{obj[3][p2][1] + v2[1],obj[3][p2][2] + v2[2],obj[3][p2][3] + v2[3]})
+                    c_proc(glEnd,{})
+                end if
+            end for
+        end if
+    end for
+
+    c_proc(glFrontFace,{GL_CCW})
+    c_proc(glColorMask,{1, 1, 1, 1})
+
+    --draw a shadowing rectangle covering the entire screen
+    c_proc(glColor4f,{0.0, 0.0, 0.0, 0.4})
+    c_proc(glEnable,{GL_BLEND})
+    c_proc(glBlendFunc,{GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA})
+    c_proc(glStencilFunc,{GL_NOTEQUAL, 0, #FFFFFFFF})
+    c_proc(glStencilOp,{GL_KEEP, GL_KEEP, GL_KEEP})
+    c_proc(glPushMatrix,{})
+    c_proc(glLoadIdentity,{})
+    c_proc(glBegin,{GL_TRIANGLE_STRIP})
+        c_proc(glVertex3f,{-0.1, 0.1,-0.10})
+        c_proc(glVertex3f,{-0.1,-0.1,-0.10})
+        c_proc(glVertex3f,{ 0.1, 0.1,-0.10})
+        c_proc(glVertex3f,{ 0.1,-0.1,-0.10})
+    c_proc(glEnd,{})
+    c_proc(glPopMatrix,{})
+    c_proc(glDisable,{GL_BLEND})
+
+    c_proc(glDepthFunc,{GL_LEQUAL})
+    c_proc(glDepthMask,{GL_TRUE})
+    c_proc(glEnable,{GL_LIGHTING})
+    c_proc(glDisable,{GL_STENCIL_TEST})
+    c_proc(glShadeModel,{GL_SMOOTH})
+
+    return obj
+end function

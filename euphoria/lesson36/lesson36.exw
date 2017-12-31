@@ -1,0 +1,578 @@
+include get.e
+include dll.e
+include machine.e
+include msgbox.e
+include constants.ew
+include GLfunc.ew
+include GLconst.ew
+
+without warning
+
+atom hRC, hDC, hWnd, hInstance, ClassName
+sequence keys keys = repeat(0,256)  -- array to hold key presses
+
+integer active, fullscreen, retval, width, height
+active = TRUE
+fullscreen = TRUE
+hRC = NULL
+hDC = NULL
+hWnd = NULL
+hInstance = NULL
+
+width = 1
+height = 1
+
+atom tickcount, lastTickCount
+
+
+atom		angle											-- Used To Rotate The Helix
+sequence	vertexes               						-- Holds Float Info For 4 Sets Of Vertices
+						vertexes = repeat({0,0,0},4)
+sequence		normal											-- An Array To Store The Normal Data
+ 						normal = {0,0,0}
+atom	BlurTexture										-- An Unsigned Int To Store The Texture Number
+
+atom glfMaterialColor, specular
+glfMaterialColor = allocate(16)
+specular = allocate(16)
+
+procedure MakeArray(atom address, sequence values)
+	for loop = 0 to length(values)-1 do
+		poke(address+loop*4,atom_to_float32(values[loop+1]))
+	end for
+end procedure
+
+function EmptyTexture()											-- Create An Empty Texture
+atom txtnumber											-- Texture ID
+atom data											-- Stored Data
+
+	txtnumber = allocate(4)
+	-- Create Storage Space For Texture Data (128x128x4)
+	data = allocate(128*128*16)
+	mem_set(data,0,128*128*16)	-- Clear Storage Memory
+
+	c_proc(glGenTextures,{1, txtnumber})								-- Create 1 Texture
+	c_proc(glBindTexture,{GL_TEXTURE_2D, peek4u(txtnumber)})					-- Bind The Texture
+	c_proc(glTexImage2D,{GL_TEXTURE_2D, 0, 4, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, data})-- Build Texture Using Information In data
+	c_proc(glTexParameteri,{GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR})
+	c_proc(glTexParameteri,{GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR})
+
+	free(data)												-- Release data
+
+	return txtnumber	-- Return The Texture ID
+end function
+
+function ReduceToUnit(sequence vector)				-- Reduces A Normal Vector (3 Coordinates) To A Unit Normal Vector With A Length Of One.
+atom ulength												-- Holds Unit Length
+
+	-- Calculates The Length Of The Vector
+	ulength = sqrt(power(vector[1],2) + power(vector[2],2) + power(vector[3],2))
+
+	if ulength = 0.0 then											-- Prevents Divide By 0 Error By Providing
+		ulength = 1.0											-- An Acceptable Value For Vectors Too Close To 0.
+	end if
+
+	vector[1] /= ulength										-- Dividing Each Element By
+	vector[2] /= ulength										-- The Length Results In A
+	vector[3] /= ulength										-- Unit Normal Vector.
+	
+	return vector
+end function
+
+procedure calcNormal(sequence v, sequence out)					-- Calculates Normal For A Quad Using 3 Points
+sequence v1, v2											-- Vector 1 (x,y,z) & Vector 2 (x,y,z)
+	
+	v1 = {0,0,0}
+	v2 = {0,0,0}
+	-- Finds The Vector Between 2 Points By Subtracting
+	-- The x,y,z Coordinates From One Point To Another.
+
+	-- Calculate The Vector From Point 1 To Point 0
+	v1[1] = v[1][1] - v[2][1]	-- Vector 1.x=Vertex[1].x-Vertex[2].x
+	v1[2] = v[1][2] - v[2][2]	-- Vector 1.y=Vertex[1].y-Vertex[2].y
+	v1[3] = v[1][3] - v[2][3]	-- Vector 1.z=Vertex[1].y-Vertex[2].z
+	-- Calculate The Vector From Point 2 To Point 1
+	v2[1] = v[2][1] - v[3][1]	-- Vector 2.x=Vertex[2].x-Vertex[3].x
+	v2[2] = v[2][2] - v[3][2]	-- Vector 2.y=Vertex[2].y-Vertex[3].y
+	v2[3] = v[2][3] - v[3][3]	-- Vector 2.z=Vertex[2].z-Vertex[3].z
+	-- Compute The Cross Product To Give Us A Surface Normal
+	out[1] = v1[2]*v2[3] - v1[3]*v2[2]							-- Cross Product For Y - Z
+	out[2] = v1[3]*v2[1] - v1[1]*v2[3]							-- Cross Product For X - Z
+	out[3] = v1[1]*v2[2] - v1[2]*v2[1]							-- Cross Product For X - Y
+
+	normal = ReduceToUnit(out)											-- Normalize The Vectors
+
+end procedure
+
+procedure ProcessHelix()												-- Draws A Helix
+atom x													-- Helix x Coordinate
+atom y													-- Helix y Coordinate
+atom z													-- Helix z Coordinate
+atom v,u												-- Angles
+atom r													-- Radius Of Twist
+integer twists, a
+
+
+	twists = 5												-- 5 Twists
+
+	MakeArray(glfMaterialColor,{0.4,0.2,0.8,1.0})			-- Set The Material Color
+	MakeArray(specular,{1.0,1.0,1.0,1.0})					-- Sets Up Specular Lighting
+
+	c_proc(glLoadIdentity,{})											-- Reset The Modelview Matrix
+ 	c_proc(gluLookAt,{0, 5, 50, 0, 0, 0, 0, 1, 0})						-- Eye Position (0,5,50) Center Of Scene (0,0,0), Up On Y Axis
+
+ 	c_proc(glPushMatrix,{})												-- Push The Modelview Matrix
+
+ 	c_proc(glTranslatef,{0,0,-50})										-- Translate 50 Units Into The Screen
+ 	c_proc(glRotatef,{angle/2.0,1,0,0})								-- Rotate By angle/2 On The X-Axis
+ 	c_proc(glRotatef,{angle/3.0,0,1,0})								-- Rotate By angle/3 On The Y-Axis
+
+    c_proc(glMaterialfv,{GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE,glfMaterialColor})
+	c_proc(glMaterialfv,{GL_FRONT_AND_BACK,GL_SPECULAR,specular})
+	
+	r=1.5														-- Radius
+
+	c_proc(glBegin,{GL_QUADS})											-- Begin Drawing Quads
+	for phi = 0 to 360 by 20 do							-- 360 Degrees In Steps Of 20
+		for theta = 0 to 360*twists by 20 do 			-- 360 Degrees * Number Of Twists In Steps Of 20
+			v= (phi/180) * 3.142 								-- Calculate Angle Of First Point	(  0 )
+			u= (theta/180) * 3.142 						-- Calculate Angle Of First Point	(  0 )
+
+			x= cos(u)*(2.0+cos(v))*r					-- Calculate x Position (1st Point)
+			y= sin(u)*(2.0+cos(v))*r					-- Calculate y Position (1st Point)
+			z= ((u-(2.0*3.142)) + sin(v)) * r		-- Calculate z Position (1st Point)
+
+			vertexes[1][1] = x									-- Set x Value Of First Vertex
+			vertexes[1][2] = y									-- Set y Value Of First Vertex
+			vertexes[1][3] = z									-- Set z Value Of First Vertex
+
+			v= (phi/180) * 3.142							-- Calculate Angle Of Second Point	(  0 )
+			u= ((theta+20)/180) * 3.142 						-- Calculate Angle Of Second Point	( 20 )
+
+			x= cos(u)*(2.0+cos(v))*r					-- Calculate x Position (2nd Point)
+			y= sin(u)*(2.0+cos(v))*r					-- Calculate y Position (2nd Point)
+			z= ((u-(2.0*3.142)) + sin(v)) * r		-- Calculate z Position (2nd Point)
+
+			vertexes[2][1] = x									-- Set x Value Of Second Vertex
+			vertexes[2][2] = y									-- Set y Value Of Second Vertex
+			vertexes[2][3] = z									-- Set z Value Of Second Vertex
+
+			v= ((phi+20)/180) * 3.142							-- Calculate Angle Of Third Point	( 20 )
+			u= ((theta+20)/180) * 3.142						-- Calculate Angle Of Third Point	( 20 )
+
+			x= cos(u)*(2.0+cos(v))*r					-- Calculate x Position (3rd Point)
+			y= sin(u)*(2.0+cos(v))*r					-- Calculate y Position (3rd Point)
+			z= ((u-(2.0*3.142)) + sin(v)) * r		-- Calculate z Position (3rd Point)
+
+			vertexes[3][1] = x									-- Set x Value Of Third Vertex
+			vertexes[3][2] = y									-- Set y Value Of Third Vertex
+			vertexes[3][3] = z									-- Set z Value Of Third Vertex
+
+			v= ((phi+20)/180) * 3.142							-- Calculate Angle Of Fourth Point	( 20 )
+			u= ((theta)/180) * 3.142						-- Calculate Angle Of Fourth Point	(  0 )
+
+			x= cos(u)*(2.0+cos(v))*r					-- Calculate x Position (4th Point)
+			y= sin(u)*(2.0+cos(v))*r					-- Calculate y Position (4th Point)
+			z= ((u-(2.0*3.142)) + sin(v)) * r		-- Calculate z Position (4th Point)
+
+			vertexes[4][1] = x									-- Set x Value Of Fourth Vertex
+			vertexes[4][2] = y									-- Set y Value Of Fourth Vertex
+			vertexes[4][3] = z									-- Set z Value Of Fourth Vertex
+
+			calcNormal(vertexes,normal)						-- Calculate The Quad Normal
+
+			c_proc(glNormal3f,{normal[1],normal[2],normal[3]}) -- Set The Normal
+
+			-- Render The Quad
+			c_proc(glVertex3f,{vertexes[1][1],vertexes[1][2],vertexes[1][3]})
+			c_proc(glVertex3f,{vertexes[2][1],vertexes[2][2],vertexes[2][3]})
+			c_proc(glVertex3f,{vertexes[3][1],vertexes[3][2],vertexes[3][3]})
+			c_proc(glVertex3f,{vertexes[4][1],vertexes[4][2],vertexes[4][3]})
+	
+		end for
+	end for
+
+	c_proc(glEnd,{})													-- Done Rendering Quads
+	
+	c_proc(glPopMatrix,{})												-- Pop The Matrix
+end procedure
+
+procedure ViewOrtho()												-- Set Up An Ortho View
+	c_proc(glMatrixMode,{GL_PROJECTION})								-- Select Projection
+	c_proc(glPushMatrix,{})												-- Push The Matrix
+	c_proc(glLoadIdentity,{})											-- Reset The Matrix
+	c_proc(glOrtho,{0, 640 , 480 , 0, -1, 1})							-- Select Ortho Mode (640x480)
+	c_proc(glMatrixMode,{GL_MODELVIEW})									-- Select Modelview Matrix
+	c_proc(glPushMatrix,{})												-- Push The Matrix
+	c_proc(glLoadIdentity,{})											-- Reset The Matrix
+end procedure
+
+procedure ViewPerspective()											-- Set Up A Perspective View
+	c_proc(glMatrixMode,{GL_PROJECTION})								-- Select Projection
+	c_proc(glPopMatrix,{})												-- Pop The Matrix
+	c_proc(glMatrixMode,{GL_MODELVIEW})								-- Select Modelview
+	c_proc(glPopMatrix,{})												-- Pop The Matrix
+end procedure
+
+procedure RenderToTexture()											-- Renders To A Texture
+	c_proc(glViewport,{0,0,128,128})									-- Set Our Viewport (Match Texture Size)
+
+	ProcessHelix()												-- Render The Helix
+
+	c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(BlurTexture)})					-- Bind To The Blur Texture
+
+	-- Copy Our ViewPort To The Blur Texture (From 0,0 To 128,128... No Border)
+	c_proc(glCopyTexImage2D,{GL_TEXTURE_2D, 0, GL_LUMINANCE, 0, 0, 128, 128, 0})
+
+	c_proc(glClearColor,{0.0, 0.0, 0.5, 0.5})						-- Set The Clear Color To Medium Blue
+	c_proc(glClear,{GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT})			-- Clear The Screen And Depth Buffer
+
+	c_proc(glViewport,{0,0,640,480})									-- Set Viewport (0,0 to 640x480)
+end procedure
+
+procedure DrawBlur(integer times, atom inc)								-- Draw The Blurred Image
+atom spost 
+atom alphainc 
+atom alpha 
+	
+	spost = 0.0											-- Starting Texture Coordinate Offset
+	alpha = 0.2											-- Starting Alpha Value
+
+	-- Disable AutoTexture Coordinates
+	c_proc(glDisable,{GL_TEXTURE_GEN_S})
+	c_proc(glDisable,{GL_TEXTURE_GEN_T})
+
+	c_proc(glEnable,{GL_TEXTURE_2D})									-- Enable 2D Texture Mapping
+	c_proc(glDisable,{GL_DEPTH_TEST})									-- Disable Depth Testing
+	c_proc(glBlendFunc,{GL_SRC_ALPHA,GL_ONE})							-- Set Blending Mode
+	c_proc(glEnable,{GL_BLEND})											-- Enable Blending
+	c_proc(glBindTexture,{GL_TEXTURE_2D,peek4u(BlurTexture)})					-- Bind To The Blur Texture
+	ViewOrtho()												-- Switch To An Ortho View
+
+	alphainc = alpha / times									-- alphainc=0.2 / Times To Render Blur
+
+	c_proc(glBegin,{GL_QUADS})											-- Begin Drawing Quads
+		for num = 0 to times -1 do					-- Number Of Times To Render Blur
+			c_proc(glColor4f,{1.0, 1.0, 1.0, alpha})					-- Set The Alpha Value (Starts At 0.2)
+			c_proc(glTexCoord2f,{0+spost,1-spost})						-- Texture Coordinate	( 0, 1 )
+			c_proc(glVertex2f,{0,0})									-- First Vertex		(   0,   0 )
+
+			c_proc(glTexCoord2f,{0+spost,0+spost})						-- Texture Coordinate	( 0, 0 )
+			c_proc(glVertex2f,{0,480})									-- Second Vertex	(   0, 480 )
+
+			c_proc(glTexCoord2f,{1-spost,0+spost})						-- Texture Coordinate	( 1, 0 )
+			c_proc(glVertex2f,{640,480})								-- Third Vertex		( 640, 480 )
+
+			c_proc(glTexCoord2f,{1-spost,1-spost})						-- Texture Coordinate	( 1, 1 )
+			c_proc(glVertex2f,{640,0})									-- Fourth Vertex	( 640,   0 )
+
+			spost += inc										-- Gradually Increase spost (Zooming Closer To Texture Center)
+			alpha -= alphainc							-- Gradually Decrease alpha (Gradually Fading Image Out)
+		end for
+	c_proc(glEnd,{})													-- Done Drawing Quads
+
+	ViewPerspective()											-- Switch To A Perspective View
+
+	c_proc(glEnable,{GL_DEPTH_TEST})									-- Enable Depth Testing
+	c_proc(glDisable,{GL_TEXTURE_2D})									-- Disable 2D Texture Mapping
+	c_proc(glDisable,{GL_BLEND})										-- Disable Blending
+	c_proc(glBindTexture,{GL_TEXTURE_2D,0})								-- Unbind The Blur Texture
+end procedure
+
+function Initialize ()					-- Any GL Init Code & User Initialiazation Goes Here
+
+atom global_ambient, light0pos, light0ambient, light0diffuse, light0specular, lmodel_ambient
+
+	global_ambient = allocate(16)
+	light0pos = allocate(16)
+	light0ambient = allocate(16)
+	light0diffuse = allocate(16)
+	light0specular = allocate(16)
+	lmodel_ambient = allocate(16)
+	
+
+	-- Start Of User Initialization
+	angle		= 0.0											-- Set Starting Angle To Zero
+
+	BlurTexture = EmptyTexture()								-- Create Our Empty Texture
+
+	c_proc(glViewport,{0 , 0,width ,height})	-- Set Up A Viewport
+	c_proc(glMatrixMode,{GL_PROJECTION})								-- Select The Projection Matrix
+	c_proc(glLoadIdentity,{})											-- Reset The Projection Matrix
+	c_proc(gluPerspective,{50, width/height, 5,  2000}) -- Set Our Perspective
+	c_proc(glMatrixMode,{GL_MODELVIEW})									-- Select The Modelview Matrix
+	c_proc(glLoadIdentity,{})											-- Reset The Modelview Matrix
+
+	c_proc(glEnable,{GL_DEPTH_TEST})									-- Enable Depth Testing
+
+	MakeArray(global_ambient,{0.2,0.2,0.2,1.0})		-- Set Ambient Lighting To Fairly Dark Light (No Color)
+	
+	MakeArray(light0pos,{0.0,5.0,10.0,1.0})	-- Set The Light Position
+	
+	MakeArray(light0ambient,{0.2,0.2,0.2,1.0})		-- More Ambient Light
+	
+	MakeArray(light0diffuse,{0.3,0.3,0.3,1.0})		-- Set The Diffuse Light A Bit Brighter
+	
+	MakeArray(light0specular,{0.8,0.8,0.8,1.0})	-- Fairly Bright Specular Lighting
+
+	MakeArray(lmodel_ambient,{0.2,0.2,0.2,1.0})	-- And More Ambient Light
+	
+	c_proc(glLightModelfv,{GL_LIGHT_MODEL_AMBIENT,lmodel_ambient})		-- Set The Ambient Light Model
+
+	c_proc(glLightModelfv,{GL_LIGHT_MODEL_AMBIENT, global_ambient})		-- Set The Global Ambient Light Model
+	c_proc(glLightfv,{GL_LIGHT0, GL_POSITION, light0pos})				-- Set The Lights Position
+	c_proc(glLightfv,{GL_LIGHT0, GL_AMBIENT, light0ambient})			-- Set The Ambient Light
+	c_proc(glLightfv,{GL_LIGHT0, GL_DIFFUSE, light0diffuse})			-- Set The Diffuse Light
+	c_proc(glLightfv,{GL_LIGHT0, GL_SPECULAR, light0specular})			-- Set Up Specular Lighting
+	c_proc(glEnable,{GL_LIGHTING})										-- Enable Lighting
+	c_proc(glEnable,{GL_LIGHT0})										-- Enable Light0
+
+	c_proc(glShadeModel,{GL_SMOOTH})									-- Select Smooth Shading
+
+	c_proc(glMateriali,{GL_FRONT, GL_SHININESS, 128})
+	c_proc(glClearColor,{0.0, 0.0, 0.0, 0.5})						-- Set The Clear Color To Black
+
+	return TRUE												-- Return TRUE (Initialization Successful)
+end function
+
+procedure Deinitialize ()										-- Any User DeInitialization Goes Here
+	c_proc(glDeleteTextures,{1,BlurTexture})							-- Delete The Blur Texture
+end procedure
+
+procedure Draw()												-- Draw The Scene
+	c_proc(glClearColor,{0.0, 0.0, 0.0, 0.5})						-- Set The Clear Color To Black
+	c_proc(glClear,{GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT})		-- Clear Screen And Depth Buffer
+	c_proc(glLoadIdentity,{})											-- Reset The View	
+	RenderToTexture()											-- Render To A Texture
+	ProcessHelix()												-- Draw Our Helix
+	DrawBlur(25,0.02)											-- Draw The Blur Effect
+	c_proc(glFlush,{})											-- Flush The GL Rendering Pipeline
+
+end procedure
+
+procedure Update(atom milliseconds)								-- Perform Motion Updates Here
+	angle += milliseconds / 5.01						-- Update angle Based On The Clock
+end procedure
+
+integer dmScreenSettings, WindowRect
+
+procedure KillGLWindow()
+    if fullscreen then
+        if c_func(ChangeDisplaySettingsA,{NULL,0}) then end if
+        if c_func(ShowCursor,{TRUE}) then end if
+    end if
+    if hRC then
+        if c_func(wglMakeCurrent,{NULL,NULL}) then end if
+        if c_func(wglDeleteContext,{hRC}) then end if
+        hRC = NULL
+    end if
+    if hRC and not c_func(ReleaseDC,{hWnd,hDC}) then
+        hDC = NULL
+    end if
+    if hWnd and not c_func(DestroyWindow,{hWnd}) then
+        hWnd = NULL
+    end if
+    if dmScreenSettings then
+        free(dmScreenSettings)
+    end if
+    free(WindowRect)
+end procedure
+
+procedure ReSizeGLScene(integer width, integer height)
+    if height = 0 then
+        height = 1
+    end if
+    c_proc(glViewport,{0,0,width,height})
+    c_proc(glMatrixMode,{GL_PROJECTION})
+    c_proc(glLoadIdentity,{})
+    c_proc(gluPerspective,{50,width/height,5,2000})
+    c_proc(glMatrixMode,{GL_MODELVIEW})
+    c_proc(glLoadIdentity,{})
+end procedure
+
+function WndProc(atom hWnd, integer uMsg, atom wParam, atom lParam)
+
+    if  uMsg = WM_SYSCOMMAND then
+        if wParam = SC_SCREENSAVE then end if
+        if wParam = SC_MONITORPOWER then end if
+    elsif uMsg = WM_CLOSE then
+        c_proc(PostQuitMessage,{0})
+    elsif uMsg = WM_KEYDOWN then
+        keys[wParam] = TRUE
+    elsif uMsg = WM_KEYUP then
+        keys[wParam] = FALSE
+    elsif uMsg = WM_SIZE then
+        ReSizeGLScene(and_bits(lParam,#FFFF),floor(lParam/#10000))
+    end if
+    return c_func(DefWindowProcA,{hWnd, uMsg, wParam, lParam})
+end function
+
+integer wc wc = allocate(40)
+function ClassRegistration()
+integer WndProcAddress, id
+    id = routine_id("WndProc")
+    if id = -1 then
+    puts(1, "routine_id failed!\n")
+    abort(1)
+    end if
+    WndProcAddress = call_back(id)
+    hInstance = c_func(GetModuleHandle,{NULL})
+    ClassName = allocate_string("OpenGL")
+    poke4(wc,or_all({CS_HREDRAW, CS_VREDRAW, CS_OWNDC}))
+    poke4(wc+4,WndProcAddress)
+    poke4(wc+8,0)
+    poke4(wc+12,0)
+    poke4(wc+16,hInstance)
+    poke4(wc+20,c_func(LoadIconA,{NULL,IDI_WINLOGO}))
+    poke4(wc+24,c_func(LoadCursorA,{NULL, IDC_ARROW}))
+    poke4(wc+28,NULL)
+    poke4(wc+32,NULL)
+    poke4(wc+36,ClassName)
+    if not c_func(RegisterClassA,{wc}) then
+        retval = message_box("Failed to register class","Error", or_bits(MB_OK,MB_ICONINFORMATION))
+        return FALSE
+    else
+        return TRUE
+    end if
+end function
+
+integer regd regd = FALSE
+procedure CreateGLWindow(atom title, integer width, integer height, integer bits, integer fullscreenflag)
+    atom PixelFormat, pfd, dwExStyle, dwStyle
+    sequence s
+
+    retval = c_func(ShowCursor,{FALSE})
+    fullscreen = fullscreenflag
+    if fullscreen then
+        dmScreenSettings = allocate(156)
+        mem_set(dmScreenSettings,0,156)
+        s = int_to_bytes(156)
+        poke(dmScreenSettings + 36,s)
+        poke4(dmScreenSettings + 40,or_all({DM_BITSPERPEL,DM_PELSWIDTH,DM_PELSHEIGHT}))
+        poke4(dmScreenSettings + 104, bits)
+        poke4(dmScreenSettings + 108, width)
+        poke4(dmScreenSettings + 112, height)
+        if c_func(ChangeDisplaySettingsA,{dmScreenSettings,CDS_FULLSCREEN}) != DISP_CHANGE_SUCCESSFUL then
+            if message_box("The requested fullscreen mode is not supported by\nyour video card. " &
+                           "Use windowed mode instead?","Error", or_bits(MB_YESNO,MB_ICONEXCLAMATION)) = IDYES then
+            else
+                retval = message_box("Program will now close","Error",or_bits(MB_OK,MB_ICONSTOP))
+            end if
+        end if
+    else
+        dmScreenSettings = NULL
+    end if
+    if fullscreen then
+        dwExStyle = WS_EX_APPWINDOW
+        dwStyle = WS_POPUP
+        if c_func(ShowCursor,{FALSE}) then end if
+    else
+        dwExStyle = or_bits(WS_EX_APPWINDOW,WS_EX_WINDOWEDGE)
+        dwStyle = WS_OVERLAPPEDWINDOW
+    end if
+    WindowRect = allocate(16)
+    poke4(WindowRect,0)
+    poke4(WindowRect + 4,0)
+    poke4(WindowRect + 8, width)
+    poke4(WindowRect + 12, height)
+    retval = c_func(AdjustWindowRectEx,{WindowRect, dwStyle, FALSE, dwExStyle})
+    hWnd = c_func(CreateWindowExA,{dwExStyle,  --extended window style
+                                   ClassName,  --class
+                                   title,      --window caption
+                                   or_all({WS_CLIPSIBLINGS,WS_CLIPCHILDREN,dwStyle}),  --window style
+                                   0,
+                                   0,
+                                   peek4u(WindowRect + 8) - peek4u(WindowRect),
+                                   peek4u(WindowRect + 12) - peek4u(WindowRect + 4),
+                                   NULL,
+                                   NULL,
+                                   hInstance,
+                                   NULL})
+    if hWnd = NULL then
+        KillGLWindow()
+        retval = message_box("Window creation error","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    pfd = allocate(40)  --PIXELFORMATDESCRIPTOR
+    mem_set(pfd,0,40)
+    poke(pfd, 40)  --size of pfd structure
+    poke(pfd + 2, 1) --version
+    poke4(pfd + 4, or_all({PFD_DRAW_TO_WINDOW,PFD_SUPPORT_OPENGL,PFD_DOUBLEBUFFER})) --properties flags
+    poke(pfd + 8, PFD_TYPE_RGBA)  --request an rgba format
+    poke(pfd + 9, 32)  --select color depth
+    poke(pfd + 23, 32)  --32bit Z-buffer
+
+    hDC = c_func(GetDC,{hWnd})  --create GL device context to match window device context
+    if not hDC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL device context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    PixelFormat = c_func(ChoosePixelFormat,{hDC,pfd})  --find a pixel format matching PIXELFORMATDESCRIPTOR
+    if not PixelFormat then
+        KillGLWindow()
+        retval = message_box("Can't find a suitable pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(SetPixelFormat,{hDC,PixelFormat,pfd})) then  --set the pixel format
+        KillGLWindow()
+        retval = message_box("Can't set the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not c_func(DescribePixelFormat, {hDC,PixelFormat,40,pfd}) then
+        retval = message_box("Can't describe the pixel format","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    hRC = c_func(wglCreateContext,{hDC})  --create GL rendering context
+    if not hRC then
+        KillGLWindow()
+        retval = message_box("Can't create a GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    if not (c_func(wglMakeCurrent,{hDC,hRC})) then  --make the GL rendering context active
+        KillGLWindow()
+        retval = message_box("Can't activate the GL rendering context","Error",or_bits(MB_OK,MB_ICONEXCLAMATION))
+    end if
+    retval = c_func(ShowWindow,{hWnd,SW_SHOW}) --show the window
+    retval = c_func(SetForegroundWindow,{hWnd}) --set it to always be in foreground
+    retval = c_func(SetFocus,{hWnd}) --give it focus
+    ReSizeGLScene(width, height)  --draw the GL scene to match the window size
+    lastTickCount = c_func(GetTickCount,{})
+end procedure
+
+integer MSG MSG = allocate(28)
+integer title title = allocate_string("Lesson 36")
+procedure WinMain()
+integer done, msg_message, isLooping, isMessagePumpActive
+	retval = ClassRegistration()
+    isLooping = TRUE
+    if message_box("Would you like to run in fullscreen mode?","Start Fullscreen?",or_bits(MB_YESNO,MB_ICONQUESTION)) = IDNO then
+        fullscreen = FALSE
+    else
+        fullscreen = TRUE
+    end if
+    
+    while isLooping do
+    	CreateGLWindow(title,640,480,32,fullscreen)
+    	if not Initialize() then
+    		KillGLWindow()
+    	else
+    		isMessagePumpActive = TRUE
+    		while isMessagePumpActive do
+        		if c_func(PeekMessageA,{MSG,NULL,0,0,PM_REMOVE}) then
+            		msg_message = peek4u(MSG+4)
+            		if msg_message != WM_QUIT then
+            			--retval = c_func(TranslateMessage,{MSG})
+                		retval = c_func(DispatchMessageA,{MSG})
+            		else
+                		isMessagePumpActive = FALSE
+            		end if
+        		else
+            		tickcount = c_func(GetTickCount,{})
+            		Update(tickcount-lastTickCount)
+            		lastTickCount = tickcount
+                	Draw()
+                	retval = c_func(SwapBuffers,{hDC})
+            	end if
+        	end while
+        end if
+        isLooping = FALSE
+        KillGLWindow()   
+    end while
+end procedure
+
+WinMain()

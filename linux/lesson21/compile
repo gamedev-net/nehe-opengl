@@ -1,0 +1,2 @@
+#!/bin/bash
+gcc -lSDL -lGL -lGLU -lglut -lpthread -lSDL_mixer -o lesson21 lesson21.c
