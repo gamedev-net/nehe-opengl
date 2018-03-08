@@ -47,7 +47,7 @@ static unsigned int getshort(FILE *fp)
 /* quick and dirty bitmap loader...for 24 bit bitmaps with 1 plane only.  */
 /* See http://www.dcs.ed.ac.uk/~mxr/gfx/2d/BMP.txt for more info.*/
 
-int ImageLoad(char *filename, Image *image) {
+int ImageLoad(const char *filename, Image *image) {
     FILE *file;
     unsigned long size;                 /* size of the image in bytes.*/
     unsigned long i;                    /* standard counter.*/

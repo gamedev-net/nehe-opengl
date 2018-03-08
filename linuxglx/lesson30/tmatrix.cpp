@@ -9,9 +9,9 @@
 
 #include "tvector.h"
 
-
-
-
+using std::istream;
+using std::ostream; 
+using std::endl;
 
 TMatrix33::TMatrix33() {
 

@@ -385,7 +385,7 @@ GLvoid KillGLWindow(GLvoid)
 
 /* this function creates our window and sets it up properly */
 /* FIXME: bits is currently unused */
-Bool CreateGLWindow(char* title, int width, int height, int bits,
+Bool CreateGLWindow(const char* title, int width, int height, int bits,
                     Bool fullscreenflag)
 {
     XVisualInfo *vi;

@@ -1,7 +1,9 @@
 CC = gcc -Wall -pedantic -ansi
 
-all: lesson28.c
-	$(CC) lesson28.c -o lesson28 -L/usr/X11R6/lib -lGL -lGLU -lXxf86vm -lm
+all: lesson28
+
+lesson28: lesson28.c
+	$(CC) $<  -o $@ -L/usr/X11R6/lib -lGL -lGLU -lXxf86vm -lX11 -lm
 
 clean:
 	@echo Cleaning up...

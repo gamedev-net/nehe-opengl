@@ -12,6 +12,8 @@
  
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
 #include <math.h>
 #include <GL/glx.h>
 #include <GL/gl.h>

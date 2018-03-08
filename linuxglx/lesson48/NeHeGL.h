@@ -40,7 +40,7 @@ typedef struct {									// Window Creation Info
 	XF86VidModeModeInfo deskMode;
 	bool doubleBuffered;
 	int	screen;
-	char *title;
+	const char *title;
 	unsigned int width;
 	unsigned int height;
 	unsigned int depth;
