@@ -1,7 +1,7 @@
 #ifndef tvector_h
 #define tvector_h
 
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 #include "mathex.h"
 
@@ -19,8 +19,8 @@ class TVector {
 		TVector(double x, double y, double z, TStatus s) : _x(x), _y(y), _z(z), _Status(s) {}
 
 		// Input and output
-		ostream &write(ostream &out) const;
-		istream &read(istream &in);
+		std::ostream &write(std::ostream &out) const;
+		std::istream &read(std::istream &in);
 
 	public:
 		// Constructors
@@ -78,8 +78,8 @@ class TVector {
 		TVector operator*(const double &scale) const { TVector tv; return multiply(*this, scale, tv); }
 
 		// Streaming
-		friend ostream &operator<<(ostream &out, const TVector &o) { return o.write(out); }
-		friend istream &operator>>(istream &in, TVector &o) { return o.read(in); }
+		friend std::ostream &operator<<(std::ostream &out, const TVector &o) { return o.write(out); }
+		friend std::istream &operator>>(std::istream &in, TVector &o) { return o.read(in); }
 };
 
 #endif

@@ -12,6 +12,9 @@
 #include "mathex.h"
 
 
+using std::istream;
+using std::ostream; 
+
 
 // Line betwen two points OR point and a direction
 

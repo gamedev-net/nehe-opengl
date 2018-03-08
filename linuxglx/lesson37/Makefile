@@ -11,4 +11,4 @@ clean:
 	rm -f *.o;rm lesson37;
 
 lesson37: $(OBJECTS)
-	$(CC) -O2 -g -o lesson37 $(OBJECTS) -L/usr/X11R6/lib -lm -lGL -lXxf86vm
+	$(CC) -O2 -g -o lesson37 $(OBJECTS) -L/usr/X11R6/lib -lm -lGL -lXxf86vm -lX11

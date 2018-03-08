@@ -12,6 +12,7 @@
 */
 
 #include <string>
+#include <cstring>
 #include <GL/gl.h>		// Header File For The OpenGL32 Library
 
 #include "Model.h"

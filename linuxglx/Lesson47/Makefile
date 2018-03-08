@@ -1,6 +1,6 @@
 #Makefile for GLX_BASE
 
-LIBS= -L/usr/X11R6/lib -lm -lGL -lGLU -lCg -lCgGL -lXxf86vm
+LIBS= -L/usr/X11R6/lib -lm -lGL -lGLU -lCg -lCgGL -lXxf86vm -lX11
 PROJECT= Lesson47
 SOURCES= glx_base.c main.c
 OBJECTS= glx_base.o main.o

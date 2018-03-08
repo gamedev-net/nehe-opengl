@@ -8,7 +8,7 @@ struct Image {
     char *data;
 };
 
-int ImageLoad(char *filename, Image *image);
+int ImageLoad(const char *filename, Image *image);
 
 
 #endif

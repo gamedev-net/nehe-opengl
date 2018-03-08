@@ -292,5 +292,5 @@ int main(int argc, char **argv)
         drawGLScene();
     }
     killGLWindow();
-    exit (0);
+    return 0;
 }

@@ -9,7 +9,8 @@
 
 #include "tray.h"
 
-
+using std::istream;
+using std::ostream; 
 
 // Mid point between two rays
 
