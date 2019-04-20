@@ -150,7 +150,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Windowing setup
 
-;; Make a 640 × 480 frame
+;; Make a 640 x 480 frame
 (define frame
   (instantiate frame% ()
     (label "NeHe's OpenGL Tutorial #2 - ported by Bandit Cat")
