@@ -1,4 +1,4 @@
-(require 
+(require
  (lib "gl.ss" "sgl")
  (lib "gl-vectors.ss" "sgl"))
 
@@ -25,22 +25,22 @@
               (lambda ()
                 (if (< i pixels)
                     (begin
-                      (vector-set! vec (* i  3) 
+                      (vector-set! vec (* i  3)
                                    (char->integer (string-ref data (+ (* i 4) 1))))
-                      (vector-set! vec (+ (* i 3) 1) 
+                      (vector-set! vec (+ (* i 3) 1)
                                    (char->integer (string-ref data (+ (* i 4) 2))))
-                      (vector-set! vec (+ (* i 3) 2) 
+                      (vector-set! vec (+ (* i 3) 2)
                                    (char->integer (string-ref data (+ (* i 4) 3))))
                       (set! i (+ i 1))
                       (loop))))])
           (loop))
         (make-texture width height (vector->gl-ubyte-vector vec)))))
 
-;; This function returns a counter that increments 
-;; each time it is called. It takes three 
+;; This function returns a counter that increments
+;; each time it is called. It takes three
 ;; arguments.  The first is the initial value of
 ;; the counter, the second is the step, the third
-;; is the minimum value, and the last is the 
+;; is the minimum value, and the last is the
 ;; maximum value.  If it reaches it's maximum value
 ;; it wraps around to it's minimum and vice-versa.
 ;; There is no error checking, so be careful.
@@ -52,13 +52,13 @@
                    (> value max)
                    (< value min))
                   (begin
-                    (cond ((> value max) 
+                    (cond ((> value max)
                            (set! value (+ min (- value max))))
-                          ((< value min) 
+                          ((< value min)
                            (set! value (+ max (+ value min)))))
                     (loop))
                   value))))
-    (lambda () 
+    (lambda ()
       (set! value (+ value step))
       (loop))))
 
@@ -75,11 +75,11 @@
     (let ((texture (load-texture "NeHe.bmp")))
       (glGenTextures 1 *texture*)
       (glBindTexture GL_TEXTURE_2D (gl-uint-vector-ref *texture* 0))
-      (glTexImage2D GL_TEXTURE_2D 0 3 (texture-width texture) (texture-height texture) 
+      (glTexImage2D GL_TEXTURE_2D 0 3 (texture-width texture) (texture-height texture)
                     0 GL_RGB GL_UNSIGNED_BYTE (texture-data texture))
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR))
-      
+
       (glEnable GL_TEXTURE_2D)
       (glShadeModel GL_SMOOTH)
       (glClearColor 0.0 0.0 0.0 0.5)
@@ -91,17 +91,17 @@
 ;; Our main function that does the drawing
 (define (gl-draw)
   (glClear (+ GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-  
+
   (glLoadIdentity)
   (glTranslatef 0 0 -5)
-  (glRotatef (xrot) 1 0 0)	
+  (glRotatef (xrot) 1 0 0)
   (glRotatef (yrot) 0 1 0)
   (glRotatef (zrot) 0 0 1)
   (glBindTexture GL_TEXTURE_2D (gl-uint-vector-ref *texture* 0))
-  
+
   (glBegin GL_QUADS)
   ; front
-  (glTexCoord2f 0 0)  
+  (glTexCoord2f 0 0)
   (glVertex3f -1 -1 1)
   (glTexCoord2f 0 1)
   (glVertex3f 1 -1 1)
@@ -110,7 +110,7 @@
   (glTexCoord2f 1 0)
   (glVertex3f -1 1 1)
   ; back
-  (glTexCoord2f 1 0)  
+  (glTexCoord2f 1 0)
   (glVertex3f -1 -1 -1)
   (glTexCoord2f 1 1)
   (glVertex3f 1 -1 -1)
@@ -119,7 +119,7 @@
   (glTexCoord2f 0 0)
   (glVertex3f -1 1 -1)
   ; top
-  (glTexCoord2f 0 1)  
+  (glTexCoord2f 0 1)
   (glVertex3f -1 1 -1)
   (glTexCoord2f 0 0)
   (glVertex3f 1 1 -1)
@@ -128,7 +128,7 @@
   (glTexCoord2f 1 1)
   (glVertex3f -1 1 1)
   ; bottom
-   (glTexCoord2f 1 1)  
+   (glTexCoord2f 1 1)
   (glVertex3f -1 -1 -1)
   (glTexCoord2f 0 1)
   (glVertex3f -1 -1 1)
@@ -137,7 +137,7 @@
   (glTexCoord2f 1 0)
   (glVertex3f 1 -1 -1)
   ; right
-  (glTexCoord2f 1 0)  
+  (glTexCoord2f 1 0)
   (glVertex3f 1 -1 -1)
   (glTexCoord2f 1 1)
   (glVertex3f 1 -1 1)
@@ -146,7 +146,7 @@
   (glTexCoord2f 0 0)
   (glVertex3f 1 1 -1)
   ;left
-   (glTexCoord2f 0 0)  
+   (glTexCoord2f 0 0)
   (glVertex3f -1 -1 -1)
   (glTexCoord2f 1 0)
   (glVertex3f -1 1 -1)
@@ -154,7 +154,7 @@
   (glVertex3f -1 1 1)
   (glTexCoord2f 0 1)
   (glVertex3f -1 -1 1)
-    
+
   (glEnd)
   (glFlush))
 
@@ -165,11 +165,11 @@
         (send glcanvas with-gl-context gl-init)
         (send glcanvas with-gl-context gl-draw)
         (send glcanvas swap-gl-buffers)
-        (set! gl-thunk 
+        (set! gl-thunk
               (lambda ()
                 (send glcanvas with-gl-context gl-draw)
                 (send glcanvas swap-gl-buffers))))
-      (begin 
+      (begin
         (display "Error: OpenGL context failed to initialize")
         (newline)
         (exit))))
@@ -178,11 +178,11 @@
 ;; A function that recorrects for a new aspect ratio when the window is resized
 (define (gl-resize width height)
   (glViewport 0 0 width height)
-  
+
   (glMatrixMode GL_PROJECTION)
   (glLoadIdentity)
   (gluPerspective 45.0 (/ width height) 0.1 100)
-  
+
   (glMatrixMode GL_MODELVIEW)
   (glLoadIdentity))
 
@@ -190,7 +190,7 @@
 (define (gl-handlekey key)
   (let ((k (send key get-key-code)))
         (cond ((eq? k 'escape) (exit))
-              ((eq? k 'f1) 
+              ((eq? k 'f1)
                ;This is FAT kludge if ever there was one.
                ;MrEd strangly dosn't seem to include a function
                ;to determine whether a frame is maximized or not,
@@ -202,30 +202,30 @@
                           (= (send frame get-height) y))
                      (send frame maximize #f)))))))
 
-;; Make a 640 × 480 frame
-(define frame 
-  (instantiate frame% () 
-    (label "NeHe's OpenGL Tutorial #6 - ported by BBurns") 
-    (width 640) 
+;; Make a 640 Ã— 480 frame
+(define frame
+  (instantiate frame% ()
+    (label "NeHe's OpenGL Tutorial #6 - ported by BBurns")
+    (width 640)
     (height 480)))
 
 (define glcanvas%
   (class canvas%
     (override on-paint on-size on-superwindow-show on-char)
     (define (on-paint) (gl-thunk))
-    
+
     (define (on-size w h)
-      (send this with-gl-context 
-            (lambda () 
+      (send this with-gl-context
+            (lambda ()
               (gl-resize w h))))
-    
+
     (define (on-superwindow-show shown)
       (if shown
           (void)
           (set! gl-loop (lambda () #t))))
-    
+
     (define (on-char key) (gl-handlekey key))
-    
+
     (super-instantiate ())))
 
 
@@ -239,7 +239,7 @@
 ;; The loop
 
 ;; This is the loop that does the majority of the drawing
-(define (gl-loop) 
+(define (gl-loop)
   (if (send glcanvas is-shown?)
       (begin
         (yield)
@@ -247,8 +247,8 @@
         (gl-loop))))
 
 ;; Show the frame
-(send frame show #t) 
+(send frame show #t)
 
 ;; Wait for the ok sign and then enter the loop.
-(letrec ((wait (lambda () (if (send glcontext ok?) (void) (wait))))) (wait)) 
+(letrec ((wait (lambda () (if (send glcontext ok?) (void) (wait))))) (wait))
 (gl-loop)

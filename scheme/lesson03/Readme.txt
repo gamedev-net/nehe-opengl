@@ -1,12 +1,12 @@
 This distribution is a collection of Jeff Molofee's excellent OpenGL tutorials ported to Scheme.  It is distributed source-only for the sake of portability.  You will need DrScheme version 205 along with SGL and MrEd in order to run these programs; all of these can be found at http://www.plt-scheme.org/.
 
 
-Contact: 
+Contact:
 
 email: bcj1980 at sbcglobal dot net
 
 
-Credits: 
+Credits:
 
 AT&T, U.C. Berkeley, Linus Torvalds, and a cast of thousands
 For *NIX
@@ -25,4 +25,3 @@ For PLT Scheme
 
 Scott Owens
 For SGL
-

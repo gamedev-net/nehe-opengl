@@ -1,26 +1,26 @@
 ;; PLT Scheme version of NeHe's tutorial #1
 ;;
-;; Written and tested with WinXP Pro + DrScheme 205 + sgl 
+;; Written and tested with WinXP Pro + DrScheme 205 + sgl
 ;; if you test this under any *nix (including FreeBSD or
 ;; any other non-linix *nix) please write me at bcj1980 at
 ;; sbcglobal dot net and tell me about the results.
 ;;
-;; Disclaimer: 
+;; Disclaimer:
 ;; I am not only a non "guru" programmer, I'm
 ;; new to scheme, OpenGL, and MrEd.  Thankfully, I have
 ;; many years experience with 3d algorithims, so it comes
-;; fairly easily to me, but don't be intimitaded by my 
-;; coding style.  This tutorial was ported under the 
+;; fairly easily to me, but don't be intimitaded by my
+;; coding style.  This tutorial was ported under the
 ;; assumption that you know C, and are following along
 ;; with NeHe's commented code and not just relying on
-;; mine.  Also, I don't attempt to explain the majority 
+;; mine.  Also, I don't attempt to explain the majority
 ;; of the scheme-centric code and I assume you are
 ;; fairly comfortable with scheme by now if you are
-;; trying out OpenGL bindings.  Also, I explicitly 
+;; trying out OpenGL bindings.  Also, I explicitly
 ;; disclaim any responsibility for firey explosions/
-;; monitor death/melting video cards, or anything else 
+;; monitor death/melting video cards, or anything else
 ;; unpleaseant that may happen to you, your hardware,
-;; or your software as a result of you using my code. 
+;; or your software as a result of you using my code.
 
 (require (lib "gl.ss" "sgl")
          (lib "gl-vectors.ss" "sgl")
@@ -33,7 +33,7 @@
 
 ;; This is a kludge for lack of GLU support in SGL.
 ;; I choose to keep the name in case SGL gets GLU
-;; support later.  You probably shouldn't try to 
+;; support later.  You probably shouldn't try to
 ;; understand this yet unless you're masochistic or
 ;; want an explosive brain hemorrhage. There is no
 ;; error checking, so be careful.
@@ -42,7 +42,7 @@
   (let ((f (/ 1 (tan (/ (* fovy (/ pi 180)) 2))))
         (g (- znear zfar)))
     (glMultMatrixd
-     (vector->gl-double-vector 
+     (vector->gl-double-vector
       (vector
        (/ f aspect) 0 0 0
        0 f 0 0
@@ -50,11 +50,11 @@
        0 0 (/ (* 2 znear zfar) g) 0)))))
 
 
-;; This function returns a counter that increments 
-;; each time it is called. It takes three 
+;; This function returns a counter that increments
+;; each time it is called. It takes three
 ;; arguments.  The first is the initial value of
 ;; the counter, the second is the step, the third
-;; is the minimum value, and the last is the 
+;; is the minimum value, and the last is the
 ;; maximum value.  If it reaches it's maximum value
 ;; it wraps around to it's minimum and vice-versa.
 ;; There is no error checking, so be careful.
@@ -66,13 +66,13 @@
                    (> value max)
                    (< value min))
                   (begin
-                    (cond ((> value max) 
+                    (cond ((> value max)
                            (set! value (+ min (- value max))))
-                          ((< value min) 
+                          ((< value min)
                            (set! value (+ max (+ value min)))))
                     (loop))
                   value))))
-    (lambda () 
+    (lambda ()
       (set! value (+ value step))
       (loop))))
 
@@ -90,98 +90,98 @@
 ;; Our main function that does the drawing
 (define (gl-draw)
   (glClear (+ GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-  
+
   ;;----------------------------------------------;;
   ;; Here we just change last tutorial to draw in 3d
   ;; , change the second glTranslate, add an extra
   ;; glLoadIdentity, and twiddle the rotation.
-  
+
   (glLoadIdentity)
   (glTranslatef -1.5 0 -6)
-  (glRotatef (trirot) 0 1 0)	
-  
+  (glRotatef (trirot) 0 1 0)
+
   (glBegin GL_TRIANGLES)
-  
+
   (glColor3f 1 0 0)
   (glVertex3f 0 1 0)
   (glColor3f 0 1 0)
   (glVertex3f -1 -1 1)
   (glColor3f 0 0 1)
   (glVertex3f 1 -1 1)
-  
+
   (glColor3f 1 0 0)
   (glVertex3f 0 1 0)
   (glColor3f 0 0 1)
   (glVertex3f 1 -1 1)
   (glColor3f 0 1 0)
   (glVertex3f 1 -1 -1)
-  
+
   (glColor3f 1 0 0)
   (glVertex3f 0 1 0)
   (glColor3f 0 1 0)
   (glVertex3f 1 -1 -1)
   (glColor3f 0 0 1)
   (glVertex3f -1 -1 -1)
-  
+
   (glColor3f 1 0 0)
   (glVertex3f 0 1 0)
   (glColor3f 0 0 1)
   (glVertex3f -1 -1 -1)
   (glColor3f 0 1 0)
   (glVertex3f -1 -1 1)
-  
+
   (glEnd)
-  
+
   (glLoadIdentity)
   (glTranslatef 1.5 0 -7)
   (glRotatef (quadrot) 1 1 1)
-  
+
   (glBegin GL_QUADS)
-  
+
   (glColor3f 0 1 0)
   (glVertex3f 1 1 -1)
   (glVertex3f -1 1 -1)
   (glVertex3f -1 1 1)
   (glVertex3f 1 1 1)
-  
+
   (glColor3f 1 0.5 0)
   (glVertex3f 1 -1 1)
   (glVertex3f -1 -1 1)
   (glVertex3f -1 -1 -1)
   (glVertex3f 1 -1 -1)
-  
+
   (glColor3f 1 0 0)
   (glVertex3f 1 1 1)
   (glVertex3f -1 1 1)
   (glVertex3f -1 -1 1)
   (glVertex3f 1 -1 1)
-  
+
   (glColor3f 1 1 0)
   (glVertex3f 1 -1 -1)
   (glVertex3f -1 -1 -1)
   (glVertex3f -1 1 -1)
   (glVertex3f 1 1 -1)
-  
+
   (glColor3f 0 0 1)
   (glVertex3f -1 1 1)
   (glVertex3f -1 1 -1)
   (glVertex3f -1 -1 -1)
   (glVertex3f -1 -1 1)
-  
+
   (glColor3f 1 0 1)
   (glVertex3f 1 1 -1)
   (glVertex3f 1 1 1)
   (glVertex3f 1 -1 1)
   (glVertex3f 1 -1 -1)
-  
+
   (glEnd)
-  
+
   (glFlush))
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Drawing, resizing, key handling 
+;; Drawing, resizing, key handling
 ;; and initilization functions
 
 
@@ -192,11 +192,11 @@
         (send glcanvas with-gl-context gl-init)
         (send glcanvas with-gl-context gl-draw)
         (send glcanvas swap-gl-buffers)
-        (set! gl-thunk 
+        (set! gl-thunk
               (lambda ()
                 (send glcanvas with-gl-context gl-draw)
                 (send glcanvas swap-gl-buffers))))
-      (begin 
+      (begin
         (display "Error: OpenGL context failed to initialize")
         (newline)
         (exit))))
@@ -205,11 +205,11 @@
 ;; A function that recorrects for a new aspect ratio when the window is resized
 (define (gl-resize width height)
   (glViewport 0 0 width height)
-  
+
   (glMatrixMode GL_PROJECTION)
   (glLoadIdentity)
   (gluPerspective 45.0 (/ width height) 0.1 100)
-  
+
   (glMatrixMode GL_MODELVIEW)
   (glLoadIdentity))
 
@@ -227,7 +227,7 @@
 (define (gl-handlekey key)
   (let ((k (send key get-key-code)))
         (cond ((eq? k 'escape) (exit))
-              ((eq? k 'f1) 
+              ((eq? k 'f1)
                ;This is FAT kludge if ever there was one.
                ;MrEd strangly dosn't seem to include a function
                ;to determine whether a frame is maximized or not,
@@ -238,35 +238,35 @@
                  (if (and (= (send frame get-width) x)
                           (= (send frame get-height) y))
                      (send frame maximize #f)))))))
-                          
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Windowing setup
 
-;; Make a 640 × 480 frame
-(define frame 
-  (instantiate frame% () 
-    (label "NeHe's OpenGL Tutorial #5 - ported by Bandit Cat") 
-    (width 640) 
+;; Make a 640 Ã— 480 frame
+(define frame
+  (instantiate frame% ()
+    (label "NeHe's OpenGL Tutorial #5 - ported by Bandit Cat")
+    (width 640)
     (height 480)))
 
 (define glcanvas%
   (class canvas%
     (override on-paint on-size on-superwindow-show on-char)
     (define (on-paint) (gl-thunk))
-    
+
     (define (on-size w h)
-      (send this with-gl-context 
-            (lambda () 
+      (send this with-gl-context
+            (lambda ()
               (gl-resize w h))))
-    
+
     (define (on-superwindow-show shown)
       (if shown
           (void)
           (set! gl-loop (lambda () #t))))
-    
+
     (define (on-char key) (gl-handlekey key))
-    
+
     (super-instantiate ())))
 
 
@@ -280,7 +280,7 @@
 ;; The loop
 
 ;; This is the loop that does the majority of the drawing
-(define (gl-loop) 
+(define (gl-loop)
   (if (send glcanvas is-shown?)
       (begin
         (yield)
@@ -288,8 +288,8 @@
         (gl-loop))))
 
 ;; Show the frame
-(send frame show #t) 
+(send frame show #t)
 
 ;; Wait for the ok sign and then enter the loop.
-(letrec ((wait (lambda () (if (send glcontext ok?) (void) (wait))))) (wait)) 
+(letrec ((wait (lambda () (if (send glcontext ok?) (void) (wait))))) (wait))
 (gl-loop)
